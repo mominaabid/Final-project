@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+
+.parallax {
+  background: url('/background.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+
+.parallax-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+html {
+    scroll-behavior: smooth;
+  }
+  
