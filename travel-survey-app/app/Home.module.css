@@ -1,0 +1,57 @@
+/* Home.module.css */
+
+.container {
+    position: relative;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f0;
+  }
+  
+  .parallaxContent {
+    text-align: center;
+    color: #fff;
+    padding: 50px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+  }
+  
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+  }
+  
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .input, .datePicker {
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+  }
+  
+  .dateRange {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .button {
+    padding: 15px;
+    background-color: #00bcd4;
+    color: white;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .button:hover {
+    background-color: #0097a7;
+  }
+  
