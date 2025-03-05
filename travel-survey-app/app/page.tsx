@@ -1,16 +1,35 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft, X } from "lucide-react";
+import { useRouter } from 'next/navigation';
+import PageLoader from './PageLoader'; 
 
-import { useRouter } from 'next/navigation'; // Router for navigation
+// Country data with images
+const countries: Country[] = [
+  { name: "Japan", image: "/japan.jpg" },
+  { name: "France", image: "/france.jpg" },
+  { name: "Australia", image: "/australia.jpg" },
+  { name: "Germany", image: "/germany.jpg" },
+  { name: "China", image: "/china.jpg" },
+  { name: "Spain", image: "/spain.jpg" },
+  { name: "Mexico", image: "/mexico.jpg" },
+  { name: "Canada", image: "/canada.jpg" },
+  { name: "Italy", image: "/italy.jpg" },
+  { name: "USA", image: "/usa.jpg" }
+];
+
+interface Country {
+  name: string;
+  image: string;
+}
 
 const Calendar = ({ onSelect, onClose }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedRange, setSelectedRange] = useState({
-    start: new Date(),
-    end: new Date()
+    start: null,
+    end: null
   });
 
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -57,7 +76,6 @@ const Calendar = ({ onSelect, onClose }) => {
     return date >= selectedRange.start && date <= selectedRange.end;
   };
   
-
   const formatDate = (date) => {
     if (!date) return "";
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
@@ -113,21 +131,20 @@ const Calendar = ({ onSelect, onClose }) => {
                   ))}
                   {days.map((date, i) => (
                     <button
-                    key={i}
-                    onClick={() => handleDateClick(date)}
-                    disabled={!date || date < new Date()} // Disable past dates
-                    className={`
-                      relative p-2 text-center text-sm rounded-lg transition-colors
-                      ${!date ? 'invisible' : ''}
-                      ${date < new Date() ? 'text-gray-600' : 'text-white'}
-                      ${date?.getTime() === selectedRange.start?.getTime() ? 'bg-teal-500' : ''}
-                      ${date?.getTime() === selectedRange.end?.getTime() ? 'bg-teal-700' : ''}
-                      ${isDateInRange(date) ? 'bg-teal-300' : 'hover:bg-gray-700'}
-                    `}
-                  >
-                    {date?.getDate()}
-                  </button>
-                  
+                      key={i}
+                      onClick={() => handleDateClick(date)}
+                      disabled={!date || date < new Date()} // Disable past dates
+                      className={`
+                        relative p-2 text-center text-sm rounded-lg transition-colors
+                        ${!date ? 'invisible' : ''}
+                        ${date < new Date() ? 'text-gray-600' : 'text-white'}
+                        ${date?.getTime() === selectedRange.start?.getTime() ? 'bg-teal-500' : ''}
+                        ${date?.getTime() === selectedRange.end?.getTime() ? 'bg-teal-700' : ''}
+                        ${isDateInRange(date) ? 'bg-teal-300' : 'hover:bg-gray-700'}
+                      `}
+                    >
+                      {date?.getDate()}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -137,10 +154,15 @@ const Calendar = ({ onSelect, onClose }) => {
 
         <div className="mt-6 flex justify-between items-center">
           <div className="text-white">
-            {selectedRange.start && selectedRange.end && (
+            {selectedRange.start && selectedRange.end ? (
               <span>
                 {formatDate(selectedRange.start)} - {formatDate(selectedRange.end)}
               </span>
+            ) : (
+              <span className="text-red-500">Select Dates</span> // Placeholder message
+            )}
+            {selectedRange.start && selectedRange.end && selectedRange.start.getTime() === selectedRange.end.getTime() && (
+              <span className="text-red-500"> Invalid: Please select at least 1 day</span> // Invalid message
             )}
           </div>
           <div className="space-x-4">
@@ -152,8 +174,12 @@ const Calendar = ({ onSelect, onClose }) => {
             </button>
             <button
               onClick={() => {
-                onSelect(selectedRange);
-                onClose();
+                if (selectedRange.start && selectedRange.end && selectedRange.start.getTime() !== selectedRange.end.getTime()) {
+                  onSelect(selectedRange);
+                  onClose();
+                } else {
+                  alert("Please select a valid date range.");
+                }
               }}
               className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
             >
@@ -166,8 +192,8 @@ const Calendar = ({ onSelect, onClose }) => {
   );
 };
 
-export default function Home() {
 
+export default function Home() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState({
     start: new Date(),
@@ -175,6 +201,7 @@ export default function Home() {
   });
   const [travellers, setTravellers] = useState(1);
   const [country, setCountry] = useState("");
+  const [backgroundImage, setBackgroundImage] = useState("/mountains.jpg");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
@@ -182,31 +209,38 @@ export default function Home() {
   const titleY = useTransform(scrollY, [0, 500], [0, 300]);
   const taglineY = useTransform(scrollY, [0, 500], [0, 200]);
   const formOpacity = useTransform(scrollY, [0, 200], [1, 0.8]);
-  const [cityInfo, setCityInfo] = useState(null);
+
+  // Country selection dropdown logic
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const filteredCountries = countries.filter(c => 
+    c.name.toLowerCase().includes(country.toLowerCase())
+  );
+
+  const handleCountrySelect = (selectedCountry: Country) => {
+    setCountry(selectedCountry.name);
+    setBackgroundImage(selectedCountry.image);
+    setShowCountryDropdown(false);
+  };
 
   useEffect(() => {
-    // Monitor scroll position to change header style
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
     window.addEventListener('scroll', handleScroll);
-    
-    // Retrieve the city info from localStorage when the component mounts
-    const storedCityInfo = localStorage.getItem("cityInfo");
-    console.log("Stored city info:", storedCityInfo); // Debug log
-  
-    if (storedCityInfo) {
-      try {
-        const parsedInfo = JSON.parse(storedCityInfo);
-        console.log("Parsed city info:", parsedInfo); // Debug log
-        setCityInfo(parsedInfo); // Update the state with parsed data
-      } catch (error) {
-        console.error("Error parsing city info:", error); // Log parsing errors
+
+    // Close country dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.country-dropdown')) {
+        setShowCountryDropdown(false);
       }
-    }
-    
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -275,22 +309,18 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
-      {/* Hero Section */}
-      <div className="relative h-screen w-full flex items-center justify-center">
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ 
-            backgroundImage: "url('/mountains.jpg')",
-            backgroundAttachment: "fixed" 
-          }}
-        />
-
+      {/* Hero Section with Parallax and Dynamic Background */}
+      <div 
+        className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-fixed transition-all duration-500"
+        style={{ 
+          backgroundImage: `url(${backgroundImage})`,
+        }}
+      >
         {/* Overlay */}
         <div className="absolute inset-0 bg-black/30" />
 
-        {/* Navbar */}
-        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+       {/* Navbar */}
+       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled ? 'bg-black/80 backdrop-blur-md' : 'bg-transparent'
         }`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -358,17 +388,19 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               className="text-6xl md:text-8xl font-bold text-white tracking-wider mb-4"
             >
-              DISCOVER
+              {country || "DISCOVER"}
             </motion.h1>
-            <motion.p
-              style={{ y: taglineY }}
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-xl md:text-2xl text-white"
-            >
-              Travel Smarter, Not Harder
-            </motion.p>
+            {!country && (
+              <motion.p
+                style={{ y: taglineY }}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-xl md:text-2xl text-white"
+              >
+                Travel Smarter, Not Harder
+              </motion.p>
+            )}
           </motion.div>
 
           {/* Search Form */}
@@ -385,14 +417,39 @@ export default function Home() {
               <h2 className="text-xl font-bold text-white text-center mb-6">
                 Plan Your Tour
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <input
-                  type="text"
-                  placeholder="Type a country..."
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="h-14 px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+                {/* Country Dropdown */}
+                <div className="relative country-dropdown">
+                  <input
+                    type="text"
+                    placeholder="Type a country..."
+                    value={country}
+                    onChange={(e) => {
+                      setCountry(e.target.value);
+                      setShowCountryDropdown(true);
+                      
+                      // Reset to default background if input is empty
+                      if (!e.target.value) {
+                        setBackgroundImage('/mountains.jpg');
+                      }
+                    }}
+                    className="h-14 w-full px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400"
+                  />
+                  {showCountryDropdown && country && (
+                    <div className="absolute z-50 mt-1 w-full bg-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
+                      {filteredCountries.map((c) => (
+                        <div
+                          key={c.name}
+                          onClick={() => handleCountrySelect(c)}
+                          className="p-2 text-white hover:bg-gray-600 cursor-pointer"
+                        >
+                          {c.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <button
                   onClick={() => setShowDatePicker(true)}
                   className="h-14 px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-left truncate hover:bg-gray-600/50 transition-colors"
@@ -422,53 +479,60 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Render Calendar if showDatePicker is true */}
+      {/* Render Calendar */}
       {showDatePicker && (
         <Calendar 
-        onSelect={(range) => {
-          console.log("Selected Date Range:", range);
-          setDateRange(range);
-        }} 
-        onClose={() => setShowDatePicker(false)} 
-      />
-      
+          onSelect={(range) => {
+            console.log("Selected Date Range:", range);
+            setDateRange(range);
+          }} 
+          onClose={() => setShowDatePicker(false)} 
+        />
       )}
 
-      {/* Packages Section */}
-      <div className="relative bg-gray-900 py-16 px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center"
-        >
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-8">
-            Explore More
-          </h2>
-          <p className="text-lg md:text-xl text-gray-300 mb-12">
-            Check out our exciting travel packages, reviews, and deals.
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {[ 
-              { title: "Beach Escape", desc: "Relax on the best beaches around the world." },
-              { title: "Mountain Adventure", desc: "Hike through stunning mountain landscapes." },
-              { title: "Cultural Tours", desc: "Discover the heritage of fascinating destinations." }
-            ].map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.2 }}
-                whileHover={{ scale: 1.05 }}
-                className="bg-white p-6 shadow-lg rounded-lg"
-              >
-                <h3 className="text-xl font-bold mb-4">{item.title}</h3>
-                <p className="text-gray-600">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+      {/* Experience Section */}
+      <div 
+        className="relative min-h-screen py-13 px-4 md:px-8 bg-fixed bg-cover bg-center"
+        style={{ 
+          backgroundImage: `url('/section-bg.jpg')`,
+        }}
+      >
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+        
+        {/* Content */}
+        <div className="max-w-6xl mx-auto min-h-screen flex flex-col md:flex-row gap-8 items-center justify-center relative z-10">
+          <motion.img 
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            src="/travel-experience.jpg" 
+            alt="Travel Experience" 
+            className="w-full md:w-1/2 rounded-lg shadow-2xl object-cover h-[400px]"
+          />
+          <motion.div 
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full md:w-1/2"
+          >
+            <h2 className="text-4xl font-bold mb-6 text-white">Experience the World</h2>
+            <p className="text-lg leading-relaxed text-gray-100">
+              Discover amazing destinations around the globe with our expertly curated travel packages. 
+              Whether you're seeking adventure in the mountains, relaxation on pristine beaches, 
+              or cultural experiences in historic cities, we have the perfect journey waiting for you.
+              Our experienced team ensures that every detail of your trip is carefully planned,
+              allowing you to focus on creating unforgettable memories.
+            </p>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="mt-8 bg-teal-500 text-white px-8 py-3 rounded-lg hover:bg-teal-600 transition-colors duration-300 shadow-xl"
+            >
+              Explore More
+            </motion.button>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
