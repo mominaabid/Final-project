@@ -6,25 +6,6 @@ import { ChevronRight, ChevronLeft, X } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import PageLoader from './PageLoader'; 
 
-// Country data with images
-const countries: Country[] = [
-  { name: "Japan", image: "/japan.jpg" },
-  { name: "France", image: "/france.jpg" },
-  { name: "Australia", image: "/australia.jpg" },
-  { name: "Germany", image: "/germany.jpg" },
-  { name: "China", image: "/china.jpg" },
-  { name: "Spain", image: "/spain.jpg" },
-  { name: "Mexico", image: "/mexico.jpg" },
-  { name: "Canada", image: "/canada.jpg" },
-  { name: "Italy", image: "/italy.jpg" },
-  { name: "USA", image: "/usa.jpg" }
-];
-
-interface Country {
-  name: string;
-  image: string;
-}
-
 const Calendar = ({ onSelect, onClose }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedRange, setSelectedRange] = useState({
@@ -201,7 +182,6 @@ export default function Home() {
   });
   const [travellers, setTravellers] = useState(1);
   const [country, setCountry] = useState("");
-  const [backgroundImage, setBackgroundImage] = useState("/mountains.jpg");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
@@ -210,37 +190,14 @@ export default function Home() {
   const taglineY = useTransform(scrollY, [0, 500], [0, 200]);
   const formOpacity = useTransform(scrollY, [0, 200], [1, 0.8]);
 
-  // Country selection dropdown logic
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-  const filteredCountries = countries.filter(c => 
-    c.name.toLowerCase().includes(country.toLowerCase())
-  );
-
-  const handleCountrySelect = (selectedCountry: Country) => {
-    setCountry(selectedCountry.name);
-    setBackgroundImage(selectedCountry.image);
-    setShowCountryDropdown(false);
-  };
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
     window.addEventListener('scroll', handleScroll);
 
-    // Close country dropdown when clicking outside
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.country-dropdown')) {
-        setShowCountryDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -309,11 +266,11 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
-      {/* Hero Section with Parallax and Dynamic Background */}
+      {/* Hero Section with fixed background */}
       <div 
         className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-fixed transition-all duration-500"
         style={{ 
-          backgroundImage: `url(${backgroundImage})`,
+          backgroundImage: `url('/mountains.jpg')`,
         }}
       >
         {/* Overlay */}
@@ -388,19 +345,17 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               className="text-6xl md:text-8xl font-bold text-white tracking-wider mb-4"
             >
-              {country || "DISCOVER"}
+              DISCOVER
             </motion.h1>
-            {!country && (
-              <motion.p
-                style={{ y: taglineY }}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-xl md:text-2xl text-white"
-              >
-                Travel Smarter, Not Harder
-              </motion.p>
-            )}
+            <motion.p
+              style={{ y: taglineY }}
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-xl md:text-2xl text-white"
+            >
+              Travel Smarter, Not Harder
+            </motion.p>
           </motion.div>
 
           {/* Search Form */}
@@ -418,37 +373,14 @@ export default function Home() {
                 Plan Your Tour
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
-                {/* Country Dropdown */}
-                <div className="relative country-dropdown">
-                  <input
-                    type="text"
-                    placeholder="Type a country..."
-                    value={country}
-                    onChange={(e) => {
-                      setCountry(e.target.value);
-                      setShowCountryDropdown(true);
-                      
-                      // Reset to default background if input is empty
-                      if (!e.target.value) {
-                        setBackgroundImage('/mountains.jpg');
-                      }
-                    }}
-                    className="h-14 w-full px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400"
-                  />
-                  {showCountryDropdown && country && (
-                    <div className="absolute z-50 mt-1 w-full bg-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
-                      {filteredCountries.map((c) => (
-                        <div
-                          key={c.name}
-                          onClick={() => handleCountrySelect(c)}
-                          className="p-2 text-white hover:bg-gray-600 cursor-pointer"
-                        >
-                          {c.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                {/* Simple Country Input (no dropdown) */}
+                <input
+                  type="text"
+                  placeholder="Type a country..."
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="h-14 w-full px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400"
+                />
 
                 <button
                   onClick={() => setShowDatePicker(true)}
