@@ -293,7 +293,7 @@ export default function HomeClient() {
   return (
     <>
       <Script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTzdaWNQ_OcoyA5KuoKpEHckRmuKiTY9A&libraries=places"
+        src="https://maps.googleapis.com/maps/api/js?key="
         strategy="afterInteractive"
         onLoad={handleGoogleLoad}
         onError={handleGoogleError}
