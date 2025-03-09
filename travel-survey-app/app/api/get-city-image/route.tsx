@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "City parameter is required" }, { status: 400 });
   }
 
-  const SERP_API_KEY = "17667e9d7275c701b87fd6ef09f87d95df5833efd9010c44e0622ea807e55be2";
+  const SERP_API_KEY = ;
   const url = `https://serpapi.com/search.json?engine=google_images&q=${encodeURIComponent(
     `${city} iconic view`
   )}&location=${encodeURIComponent(city)}&api_key=${SERP_API_KEY}`;
