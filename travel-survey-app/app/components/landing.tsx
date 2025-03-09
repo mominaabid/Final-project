@@ -289,9 +289,9 @@ export default function HomeClient() {
       alert("Failed to fetch activities. Ensure the API server is running at http://127.0.0.1:5000.");
     }
   };
-
+// add google api here an api is in private text
   return (
-    <>
+    <> 
       <Script
         src="https://maps.googleapis.com/maps/api/js?key="
         strategy="afterInteractive"
