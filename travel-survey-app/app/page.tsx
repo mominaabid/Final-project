@@ -184,18 +184,11 @@ export default function Home() {
   const [country, setCountry] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState('/mountains.jpg');
-  const [isLoading, setIsLoading] = useState(false);
-  const [countryChanged, setCountryChanged] = useState(false);
-  
   const router = useRouter();
   const { scrollY } = useScroll();
   const titleY = useTransform(scrollY, [0, 500], [0, 300]);
   const taglineY = useTransform(scrollY, [0, 500], [0, 200]);
   const formOpacity = useTransform(scrollY, [0, 200], [1, 0.8]);
-
-  // Unsplash API key
-  const UNSPLASH_ACCESS_KEY = "6a8szXkr7McWwDJU0DBZQducZovKXOZApejKAk3qzLs"; // Replace with your actual Unsplash API key
 
   useEffect(() => {
     const handleScroll = () => {
@@ -207,65 +200,6 @@ export default function Home() {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
-
-  // Effect to fetch image when country changes and input is blurred
-  useEffect(() => {
-    if (country && countryChanged) {
-      fetchCityImage(country);
-      setCountryChanged(false);
-    }
-  }, [countryChanged]);
-
-  const fetchCityImage = async (cityName) => {
-    if (!cityName || cityName.trim() === "") return;
-    
-    setIsLoading(true);
-    
-    try {
-      const response = await fetch(
-        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(cityName)}&client_id=${UNSPLASH_ACCESS_KEY}&orientation=landscape&per_page=1`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Unsplash API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.results && data.results.length > 0) {
-        // Create a new image to preload
-        const img = new Image();
-        img.src = data.results[0].urls.regular;
-        
-        img.onload = () => {
-          // Once image is loaded, update the background with animation
-          setBackgroundImage(data.results[0].urls.regular);
-          setIsLoading(false);
-        };
-        
-        img.onerror = () => {
-          console.error("Failed to load image");
-          setIsLoading(false);
-        };
-      } else {
-        console.log("No images found for this location");
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error("Error fetching image from Unsplash:", error);
-      setIsLoading(false);
-    }
-  };
-
-  const handleCountryChange = (e) => {
-    setCountry(e.target.value);
-  };
-
-  const handleCountryBlur = () => {
-    if (country) {
-      setCountryChanged(true);
-    }
-  };
 
   const handlePlanNow = async () => {
     if (!country) {
@@ -332,20 +266,13 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
-      {/* Hero Section with dynamic background */}
+      {/* Hero Section with fixed background */}
       <div 
-        className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-fixed transition-all duration-1000"
+        className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-fixed transition-all duration-500"
         style={{ 
-          backgroundImage: `url('${backgroundImage}')`,
+          backgroundImage: `url('/mountains.jpg')`,
         }}
       >
-        {/* Loading overlay */}
-        {isLoading && (
-          <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
-            <div className="w-16 h-16 border-4 border-t-teal-500 border-teal-100/30 rounded-full animate-spin"></div>
-          </div>
-        )}
-        
         {/* Overlay */}
         <div className="absolute inset-0 bg-black/30" />
 
@@ -446,13 +373,12 @@ export default function Home() {
                 Plan Your Tour
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
-                {/* Country Input with onBlur handler for Unsplash API */}
+                {/* Simple Country Input (no dropdown) */}
                 <input
                   type="text"
                   placeholder="Type a country..."
                   value={country}
-                  onChange={handleCountryChange}
-                  onBlur={handleCountryBlur}
+                  onChange={(e) => setCountry(e.target.value)}
                   className="h-14 w-full px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400"
                 />
 
@@ -543,3 +469,8 @@ export default function Home() {
     </div>
   );
 }
+
+export const metadata = {
+  title: "Honest Travel",
+  description: "Plan your tour with Honest Travel",
+};
