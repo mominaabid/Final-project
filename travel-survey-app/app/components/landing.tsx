@@ -160,7 +160,6 @@ export default function HomeClient() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState("/mountains.jpg");
   const router = useRouter();
   const { scrollY } = useScroll();
   const titleY = useTransform(scrollY, [0, 500], [0, 300]);
@@ -180,71 +179,41 @@ export default function HomeClient() {
   };
 
   const handleGoogleError = () => {
-    console.error("Failed to load Google Maps API. Check API key or network.");
+    console.error("Failed to load Google Maps API. Check API key or network connectivity.");
+    alert("Google Maps API failed to load. Please check your internet connection or API key.");
   };
 
   useEffect(() => {
-    if (!country) {
-      setBackgroundImage("/mountains.jpg");
+    if (!isGoogleLoaded || !window.google) {
+      console.log("Google Maps API not yet loaded...");
       return;
     }
 
-    const fetchCityImage = async () => {
-      try {
-        console.log(`Fetching image for city: ${country}`);
-        const response = await fetch(`/api/get-city-image?city=${encodeURIComponent(country)}`);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Proxy API request failed with status: ${response.status} - ${errorText}`);
-        }
-
-        const data = await response.json();
-        console.log("Proxy API Response:", data);
-
-        const imageUrl = data.imageUrl;
-        if (imageUrl) {
-          setBackgroundImage(imageUrl);
-          console.log("Background image set to:", imageUrl);
-        } else {
-          console.warn("No image URL returned from proxy. Using default.");
-          setBackgroundImage("/mountains.jpg");
-        }
-      } catch (error) {
-        console.error("Error fetching city image:", error.message);
-        setBackgroundImage("/mountains.jpg");
-      }
-    };
-
-    fetchCityImage();
-  }, [country]);
-
-  useEffect(() => {
-    if (!isGoogleLoaded) {
-      console.log("Waiting for Google Maps API to load...");
-      return;
-    }
     if (!inputRef.current) {
-      console.error("Input ref is not attached to an element.");
+      console.error("Input reference is not attached to an element.");
       return;
     }
 
     try {
       console.log("Initializing Google Places Autocomplete...");
       const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ["(cities)"],
+        types: ["(cities)"], // Restrict to cities
+        fields: ["name"], // Only fetch the city name
       });
+
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         if (!place || !place.name) {
           console.warn("No valid place selected or place.name is undefined.");
+          setCountry(""); // Clear input if invalid
           return;
         }
         console.log("Selected place:", place.name);
         setCountry(place.name);
       });
     } catch (error) {
-      console.error("Error initializing Autocomplete:", error);
+      console.error("Error initializing Google Places Autocomplete:", error);
+      alert("Failed to initialize Google Places. Please try again later.");
     }
   }, [isGoogleLoaded]);
 
@@ -289,19 +258,19 @@ export default function HomeClient() {
       alert("Failed to fetch activities. Ensure the API server is running at http://127.0.0.1:5000.");
     }
   };
-// add google api here an api is in private text
+
   return (
-    <> 
+    <>
       <Script
-        src="https://maps.googleapis.com/maps/api/js?key="
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTzdaWNQ_OcoyA5KuoKpEHckRmuKiTY9A&libraries=places"
         strategy="afterInteractive"
         onLoad={handleGoogleLoad}
         onError={handleGoogleError}
       />
       <div className="relative min-h-screen w-full overflow-x-hidden">
         <div
-          className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-fixed transition-all duration-500"
-          style={{ backgroundImage: `url(${backgroundImage})` }}
+          className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-fixed"
+          style={{ backgroundImage: `url('/mountains.jpg')` }}
         >
           <div className="absolute inset-0 bg-black/30" />
           <nav
