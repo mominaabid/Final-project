@@ -67,12 +67,12 @@ export default function CityDetails() {
       alert("Please select at least one activity.");
       return;
     }
-
+  
     if (!cityInfo) {
       alert("City information is missing. Please restart.");
       return;
     }
-
+  
     try {
       const response = await fetch("http://127.0.0.1:5000/generate_travel_plan", {
         method: "POST",
@@ -85,15 +85,18 @@ export default function CityDetails() {
           selected_activities: selectedActivities,
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error(`HTTP Error! Status: ${response.status}`);
       }
-
+  
       const plan = await response.json();
       console.log("Generated Travel Plan:", plan);
-
+  
+      // Store the travel plan in localStorage
       localStorage.setItem("travelPlan", JSON.stringify(plan));
+  
+      // Redirect to the travel plan page
       router.push(`/travel-plan/${city}`);
     } catch (error) {
       console.error("Error generating travel plan:", error);

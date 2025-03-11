@@ -1,164 +1,48 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+"use client";
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface TravelPlan {
-  country: string;
-  travelDate: string;
-  travelers: number;
-  selectedActivities: string[];
-  itinerary?: {
-    day: number;
-    activities: {
-      time: string;
-      activity: string;
-      description: string;
-    }[];
-  }[];
-  accommodation?: {
-    name: string;
-    description: string;
-    price: string;
-    image: string;
-  };
-  transportation?: {
-    type: string;
-    details: string;
-    price: string;
-  };
-  totalCost?: string;
-}
 
 export default function TravelPlanPage() {
   const router = useRouter();
-  const [travelPlan, setTravelPlan] = useState<TravelPlan | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [travelPlan, setTravelPlan] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Get travel plan data from localStorage
-    const travelPlanDataString = localStorage.getItem('travelPlanData');
-    
-    if (!travelPlanDataString) {
-      // Redirect back to home if no travel plan data
-      router.push('/');
-      return;
-    }
-    
-    try {
-      const travelPlanData = JSON.parse(travelPlanDataString);
-      
-      // Generate itinerary and other plan details
-      generateTravelPlan(travelPlanData);
-    } catch (error) {
-      console.error('Error parsing travel plan data:', error);
-      router.push('/');
-    }
-  }, [router]);
+    const fetchTravelPlan = async () => {
+      setLoading(true);
+      try {
+        // Fetch the travel plan from the backend
+        const response = await fetch('http://127.0.0.1:5000/get_travel_plan', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-  const generateTravelPlan = async (basePlanData: TravelPlan) => {
-    setLoading(true);
-    
-    try {
-      // In a real application, you would call your backend API to generate a plan
-      const response = await fetch('http://localhost:5000/generate_plan', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          country: basePlanData.country,
-          travelDate: basePlanData.travelDate,
-          travelers: basePlanData.travelers,
-          activities: basePlanData.selectedActivities
-        }),
-      }).catch(error => {
-        console.error('Error fetching from API:', error);
-        return null;
-      });
-      
-      // If the API call fails, use mock data
-      if (!response || !response.ok) {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Create a mock itinerary based on selected activities
-        const numDays = Math.ceil(basePlanData.selectedActivities.length / 2);
-        const itinerary = Array.from({ length: numDays }, (_, dayIndex) => {
-          const dayActivities = basePlanData.selectedActivities
-            .slice(dayIndex * 2, (dayIndex + 1) * 2)
-            .map((activity, index) => ({
-              time: index === 0 ? '09:00 - 12:00' : '14:00 - 17:00',
-              activity,
-              description: `Enjoy ${activity.toLowerCase()} in ${basePlanData.country}. This is a must-do experience for travelers.`
-            }));
-            
-          // Add meals
-          return {
-            day: dayIndex + 1,
-            activities: [
-              {
-                time: '08:00 - 09:00',
-                activity: 'Breakfast',
-                description: 'Enjoy a delicious breakfast at your hotel'
-              },
-              ...dayActivities,
-              {
-                time: '12:00 - 14:00',
-                activity: 'Lunch',
-                description: 'Experience local cuisine at a recommended restaurant'
-              },
-              {
-                time: '18:00 - 20:00',
-                activity: 'Dinner',
-                description: 'Enjoy dinner at a scenic restaurant with local flavors'
-              }
-            ]
-          };
-        });
-        
-        // Complete travel plan with accommodation and transportation
-        const completePlan: TravelPlan = {
-          ...basePlanData,
-          itinerary,
-          accommodation: {
-            name: `${basePlanData.country} Luxury Resort`,
-            description: 'A 4-star hotel with excellent amenities, located in the heart of the city with easy access to major attractions.',
-            price: `$${Math.floor(120 + Math.random() * 200)} per night`,
-            image: '/hotel.jpg'
-          },
-          transportation: {
-            type: 'Private Car',
-            details: 'Comfortable transportation with professional driver for all activities and transfers.',
-            price: `$${Math.floor(50 + Math.random() * 100)} per day`
-          },
-          totalCost: `$${Math.floor(1000 + Math.random() * 2000)}`
-        };
-        
-        setTravelPlan(completePlan);
-      } else {
-        // If API call succeeds, use the returned data
+        if (!response.ok) {
+          throw new Error(`Error fetching travel plan: ${response.status}`);
+        }
+
         const data = await response.json();
-        setTravelPlan({
-          ...basePlanData,
-          ...data
-        });
+        setTravelPlan(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching travel plan:', err);
+        setError('Failed to load travel plan. Please try again later.');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error generating travel plan:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchTravelPlan();
+  }, []);
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleBackToHome = () => {
-    // Clear travel data
-    localStorage.removeItem('travelInfo');
-    localStorage.removeItem('travelPlanData');
     router.push('/');
   };
 
@@ -167,19 +51,19 @@ export default function TravelPlanPage() {
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-teal-500 mx-auto mb-4"></div>
-          <h2 className="text-2xl font-semibold text-gray-800">Generating Your Travel Plan</h2>
-          <p className="text-gray-600 mt-2">Creating a personalized itinerary based on your selections...</p>
+          <h2 className="text-2xl font-semibold text-gray-800">Loading Your Travel Plan</h2>
+          <p className="text-gray-600 mt-2">Fetching your personalized itinerary...</p>
         </div>
       </div>
     );
   }
 
-  if (!travelPlan) {
+  if (error || !travelPlan) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-gray-800">Something went wrong</h2>
-          <p className="text-gray-600 mt-2">Unable to generate your travel plan</p>
+          <p className="text-gray-600 mt-2">{error || 'Unable to load your travel plan'}</p>
           <button 
             onClick={handleBackToHome}
             className="mt-6 bg-teal-500 text-white px-6 py-2 rounded hover:bg-teal-600 transition-colors"
@@ -190,6 +74,49 @@ export default function TravelPlanPage() {
       </div>
     );
   }
+
+  // Process the travel plan data for display
+  const plan = travelPlan;
+  const city = plan.city;
+  const startDate = plan.start_date;
+  const endDate = plan.end_date;
+  const numTravelers = plan.num_travelers;
+  const travelPlans = plan.travel_plan;
+
+  // Parse the travel plan from the backend
+  const parseTravelPlan = () => {
+    try {
+      // The backend returns a string, so we need to parse it
+      let parsedPlan = typeof travelPlans === 'string' 
+        ? JSON.parse(travelPlans) 
+        : travelPlans;
+      
+      if (typeof parsedPlan === 'string') {
+        parsedPlan = JSON.parse(parsedPlan);
+      }
+      
+      return parsedPlan;
+    } catch (err) {
+      console.error('Error parsing travel plan:', err);
+      return {
+        itinerary: [],
+        accommodation: {
+          name: "Not available",
+          description: "Accommodation details could not be loaded",
+          price: "N/A",
+          image: "/hotel.jpg"
+        },
+        transportation: {
+          type: "Not available",
+          details: "Transportation details could not be loaded",
+          price: "N/A"
+        },
+        totalCost: "N/A"
+      };
+    }
+  };
+
+  const parsedPlan = parseTravelPlan();
 
   return (
     <main className="min-h-screen bg-gray-100">
@@ -208,7 +135,7 @@ export default function TravelPlanPage() {
           </div>
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => router.push('/activities')}
+              onClick={handleBackToHome}
               className="bg-transparent border border-white px-3 py-1 rounded hover:bg-white hover:text-teal-800 transition-colors"
             >
               Back to Activities
@@ -233,13 +160,13 @@ export default function TravelPlanPage() {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
           <div 
             className="h-64 bg-cover bg-center relative"
-            style={{ backgroundImage: `url('/${travelPlan.country.toLowerCase()}.jpg')` }}
+            style={{ backgroundImage: `url('/api/placeholder/800/400')` }}
           >
             <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end">
               <div className="p-6 text-white">
-                <h1 className="text-4xl font-bold">{travelPlan.country} Travel Plan</h1>
+                <h1 className="text-4xl font-bold">{city} Travel Plan</h1>
                 <p className="mt-2 text-xl">
-                  {travelPlan.travelDate} • {travelPlan.travelers} Traveler{travelPlan.travelers !== 1 ? 's' : ''}
+                  {startDate} to {endDate} • {numTravelers} Traveler{numTravelers !== 1 ? 's' : ''}
                 </p>
               </div>
             </div>
@@ -255,7 +182,7 @@ export default function TravelPlanPage() {
               </div>
               <div className="mt-4 md:mt-0">
                 <span className="bg-teal-100 text-teal-800 px-4 py-2 rounded-full font-semibold">
-                  Total Cost: {travelPlan.totalCost}
+                  Total Cost: {parsedPlan.totalCost || 'Calculating...'}
                 </span>
               </div>
             </div>
@@ -269,7 +196,7 @@ export default function TravelPlanPage() {
           </div>
           
           <div className="divide-y divide-gray-200">
-            {travelPlan.itinerary?.map((day) => (
+            {parsedPlan.itinerary && parsedPlan.itinerary.map((day) => (
               <div key={day.day} className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Day {day.day}</h3>
                 
@@ -302,15 +229,15 @@ export default function TravelPlanPage() {
             <div className="p-6">
               <div 
                 className="h-48 bg-cover bg-center rounded-lg mb-4"
-                style={{ backgroundImage: `url('${travelPlan.accommodation?.image}')` }}
+                style={{ backgroundImage: `url('/api/placeholder/400/200')` }}
               ></div>
               
-              <h3 className="text-xl font-semibold">{travelPlan.accommodation?.name}</h3>
-              <p className="text-gray-600 mt-2">{travelPlan.accommodation?.description}</p>
+              <h3 className="text-xl font-semibold">{parsedPlan.accommodation?.name || 'Luxury Hotel'}</h3>
+              <p className="text-gray-600 mt-2">{parsedPlan.accommodation?.description || 'Comfortable accommodations with excellent amenities.'}</p>
               
               <div className="mt-4 flex justify-between items-center">
                 <span className="text-gray-600">Price</span>
-                <span className="font-semibold">{travelPlan.accommodation?.price}</span>
+                <span className="font-semibold">{parsedPlan.accommodation?.price || 'Contact for pricing'}</span>
               </div>
             </div>
           </div>
@@ -327,15 +254,15 @@ export default function TravelPlanPage() {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
-                  <h3 className="text-xl font-semibold ml-4">{travelPlan.transportation?.type}</h3>
+                  <h3 className="text-xl font-semibold ml-4">{parsedPlan.transportation?.type || 'Private Transportation'}</h3>
                 </div>
               </div>
               
-              <p className="text-gray-600">{travelPlan.transportation?.details}</p>
+              <p className="text-gray-600">{parsedPlan.transportation?.details || 'Comfortable transportation for all your activities and transfers.'}</p>
               
               <div className="mt-4 flex justify-between items-center">
                 <span className="text-gray-600">Price</span>
-                <span className="font-semibold">{travelPlan.transportation?.price}</span>
+                <span className="font-semibold">{parsedPlan.transportation?.price || 'Contact for pricing'}</span>
               </div>
             </div>
           </div>

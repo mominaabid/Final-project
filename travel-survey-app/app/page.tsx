@@ -222,7 +222,7 @@ export default function Home() {
   return (
     <>
       <Script
-        src=
+        src="AIzaSyBTzdaWNQ_OcoyA5KuoKpEHckRmuKiTY9A&libraries=places"
         strategy="afterInteractive"
         onLoad={handleScriptLoad}
         onError={(e) => console.error("Error loading Google Maps script:", e)}
