@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -12,24 +11,45 @@ export default function TravelPlanPage() {
 
   useEffect(() => {
     const fetchTravelPlan = async () => {
-      setLoading(true);
-      try {
-        // Get travel plan from localStorage instead of making a new API call
-        const storedPlan = localStorage.getItem("travelPlan");
-        
-        if (!storedPlan) {
-          throw new Error("No travel plan found in storage");
+        setLoading(true);
+        try {
+            // Get travel plan from localStorage (stored as string)
+            const storedPlan = localStorage.getItem("travelPlan");
+
+            if (!storedPlan) {
+                throw new Error("No travel plan found in storage");
+            }
+
+            // Create a travel plan object - either parse JSON or use the raw text
+            let parsedPlan;
+            try {
+                parsedPlan = JSON.parse(storedPlan);
+            } catch (e) {
+                // If not valid JSON, create a basic object with the raw text
+                console.log("Stored plan is not valid JSON, using raw content");
+                parsedPlan = {
+                    travel_plan: {
+                        itinerary: [{
+                            day: 1,
+                            activities: [{
+                                time: "",
+                                activity: "Your Itinerary",
+                                description: storedPlan // Store the raw text as description
+                            }]
+                        }],
+                        totalCost: "Contact for pricing"
+                    }
+                };
+            }
+            
+            setTravelPlan(parsedPlan);
+            setError(null);
+        } catch (err) {
+            console.error("Error loading travel plan:", err);
+            setError("Failed to load travel plan. Please try again later.");
+        } finally {
+            setLoading(false);
         }
-        
-        const parsedPlan = JSON.parse(storedPlan);
-        setTravelPlan(parsedPlan);
-        setError(null);
-      } catch (err) {
-        console.error('Error loading travel plan:', err);
-        setError('Failed to load travel plan. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
     };
 
     fetchTravelPlan();
@@ -90,11 +110,37 @@ export default function TravelPlanPage() {
       // Handle different possible formats of the travel plan
       let parsedPlan = travelPlan.travel_plan;
       
-      if (typeof parsedPlan === 'string') {
+      // Handle the case when travel_plan is a string with markdown content
+      if (typeof parsedPlan === 'string' && parsedPlan.includes('#')) {
+        // This appears to be markdown content
+        return {
+          itinerary: [{
+            day: 1,
+            activities: [{
+              time: "",
+              activity: "Your Itinerary",
+              description: parsedPlan // Use the markdown text as description
+            }]
+          }],
+          accommodation: {
+            name: "Recommended Accommodation",
+            description: "Details provided upon booking",
+            price: "Varies by season"
+          },
+          transportation: {
+            type: "Various Options",
+            details: "Details provided upon booking",
+            price: "Varies by option"
+          },
+          totalCost: "Contact for pricing"
+        };
+      }
+      
+      // Handle normal JSON cases
+      if (typeof parsedPlan === 'string' && !parsedPlan.includes('#')) {
         try {
           parsedPlan = JSON.parse(parsedPlan);
         } catch (e) {
-          // If it can't be parsed as JSON, it might already be in the desired format
           console.log("Could not parse travel_plan as JSON, using as is");
         }
       }
@@ -105,6 +151,30 @@ export default function TravelPlanPage() {
           parsedPlan = JSON.parse(parsedPlan);
         } catch (e) {
           console.error("Failed to parse nested travel plan:", e);
+          // Create a fallback for markdown content
+          if (parsedPlan.includes('#')) {
+            return {
+              itinerary: [{
+                day: 1,
+                activities: [{
+                  time: "",
+                  activity: "Your Itinerary",
+                  description: parsedPlan // Use the markdown text as description
+                }]
+              }],
+              accommodation: {
+                name: "Recommended Accommodation",
+                description: "Details provided upon booking",
+                price: "Varies by season"
+              },
+              transportation: {
+                type: "Various Options",
+                details: "Details provided upon booking",
+                price: "Varies by option"
+              },
+              totalCost: "Contact for pricing"
+            };
+          }
         }
       }
       
@@ -143,6 +213,36 @@ export default function TravelPlanPage() {
   };
 
   const parsedPlan = parseTravelPlan();
+
+  // Special rendering for markdown content
+  const renderMarkdownContent = () => {
+    // Check if we have a single activity with markdown content
+    if (parsedPlan.itinerary?.length === 1 && 
+        parsedPlan.itinerary[0]?.activities?.length === 1 &&
+        parsedPlan.itinerary[0].activities[0]?.description?.includes('#')) {
+      
+      const markdownContent = parsedPlan.itinerary[0].activities[0].description;
+      
+      return (
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-2xl font-semibold">Your Itinerary</h2>
+          </div>
+          
+          <div className="p-6">
+            <div className="prose max-w-none">
+              {/* Display markdown content with preserved formatting */}
+              <div style={{ whiteSpace: 'pre-wrap' }}>
+                {markdownContent}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
+  };
 
   return (
     <main className="min-h-screen bg-gray-100">
@@ -208,40 +308,45 @@ export default function TravelPlanPage() {
           </div>
         </div>
 
-        {/* Itinerary Section */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-2xl font-semibold">Daily Itinerary</h2>
-          </div>
-          
-          <div className="divide-y divide-gray-200">
-            {parsedPlan.itinerary && parsedPlan.itinerary.length > 0 ? (
-              parsedPlan.itinerary.map((day, index) => (
-                <div key={index} className="p-6">
-                  <h3 className="text-xl font-semibold mb-4">Day {day.day || index + 1}</h3>
-                  
-                  <div className="space-y-6">
-                    {day.activities && day.activities.map((activity, actIndex) => (
-                      <div key={actIndex} className="flex">
-                        <div className="w-32 flex-shrink-0 text-gray-500 font-medium">
-                          {activity.time || ""}
+        {/* Special rendering for markdown content */}
+        {renderMarkdownContent()}
+
+        {/* Normal itinerary section - only show if not showing markdown */}
+        {!parsedPlan.itinerary[0]?.activities[0]?.description?.includes('#') && (
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-semibold">Daily Itinerary</h2>
+            </div>
+            
+            <div className="divide-y divide-gray-200">
+              {parsedPlan.itinerary && parsedPlan.itinerary.length > 0 ? (
+                parsedPlan.itinerary.map((day, index) => (
+                  <div key={index} className="p-6">
+                    <h3 className="text-xl font-semibold mb-4">Day {day.day || index + 1}</h3>
+                    
+                    <div className="space-y-6">
+                      {day.activities && day.activities.map((activity, actIndex) => (
+                        <div key={actIndex} className="flex">
+                          <div className="w-32 flex-shrink-0 text-gray-500 font-medium">
+                            {activity.time || ""}
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-semibold">{activity.activity || activity.name || "Activity"}</h4>
+                            <p className="text-gray-600 mt-1">{activity.description || ""}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="text-lg font-semibold">{activity.activity || activity.name || "Activity"}</h4>
-                          <p className="text-gray-600 mt-1">{activity.description || ""}</p>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="p-6 text-center text-gray-500">
+                  No itinerary details available. Please contact customer support.
                 </div>
-              ))
-            ) : (
-              <div className="p-6 text-center text-gray-500">
-                No itinerary details available. Please contact customer support.
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Accommodation & Transportation */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -261,7 +366,7 @@ export default function TravelPlanPage() {
               <p className="text-gray-600 mt-2">{parsedPlan.accommodation?.description || 'Comfortable accommodations with excellent amenities.'}</p>
               
               <div className="mt-4 flex justify-between items-center">
-                <span className="text-gray-600">Price</span>
+              <span className="text-gray-600">Price</span>
                 <span className="font-semibold">{parsedPlan.accommodation?.price || 'Contact for pricing'}</span>
               </div>
             </div>
