@@ -1,1 +1,5 @@
 travel-survey-app/* filter=lfs diff=lfs merge=lfs -text
+<<<<<<< HEAD
+=======
+node_modules/@next/swc-win32-x64-msvc/next-swc.win32-x64-msvc.node filter=lfs diff=lfs merge=lfs -text
+>>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db

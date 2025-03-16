@@ -147,7 +147,10 @@ export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+<<<<<<< HEAD
   const [backgroundImage, setBackgroundImage] = useState("/mountains.jpg");
+=======
+>>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
   const router = useRouter();
   const { scrollY } = useScroll();
   const titleY = useTransform(scrollY, [0, 500], [0, 300]);
@@ -173,6 +176,7 @@ export default function Home() {
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       console.log("Place selected:", place);
+<<<<<<< HEAD
       if (place && place.name) {
         setCountry(place.name);
         fetchCityImage(place.name); // Fetch image when city is selected
@@ -215,6 +219,12 @@ export default function Home() {
     }
   };
 
+=======
+      if (place && place.name) setCountry(place.name);
+    });
+  };
+
+>>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
   const handleScriptLoad = () => {
     console.log("Google Maps script loaded successfully");
     setIsGoogleLoaded(true);
@@ -261,7 +271,11 @@ export default function Home() {
   return (
     <>
       <Script
+<<<<<<< HEAD
         src=""
+=======
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTzdaWNQ_OcoyA5KuoKpEHckRmuKiTY9A&libraries=places"
+>>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
         strategy="afterInteractive"
         onLoad={handleScriptLoad}
         onError={(e) => console.error("Error loading Google Maps script:", e)}
@@ -270,7 +284,11 @@ export default function Home() {
       <div className="relative min-h-screen w-full overflow-x-hidden">
         <div
           className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-fixed transition-all duration-500"
+<<<<<<< HEAD
           style={{ backgroundImage: `url(${backgroundImage})` }}
+=======
+          style={{ backgroundImage: `url('/mountains.jpg')` }}
+>>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
         >
           <div className="absolute inset-0 bg-black/30" />
           <nav
@@ -354,6 +372,7 @@ export default function Home() {
                     type="text"
                     placeholder="Type a city..."
                     value={country}
+<<<<<<< HEAD
                     onChange={(e) => {
                       setCountry(e.target.value);
                       if (!e.target.value) setBackgroundImage("/mountains.jpg");
@@ -370,6 +389,22 @@ export default function Home() {
                     }
                     .pac-container:after {
                       display: none !important;
+=======
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="h-14 w-full px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400"
+                  />
+                  {/* Enhanced CSS to ensure dropdown appears above the input */}
+                  <style jsx>{`
+                    .pac-container {
+                      bottom: calc(100% + 5px) !important; /* Positions above the input with a small gap */
+                      top: auto !important; /* Overrides default top positioning */
+                      transform: translateY(-100%) translateY(-5px); /* Moves it fully above with offset */
+                      z-index: 9999 !important; /* Ensures it stays above other elements */
+                      position: absolute !important; /* Forces absolute positioning relative to input */
+                    }
+                    .pac-container:after {
+                      display: none !important; /* Removes any potential arrow pointing downward */
+>>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
                     }
                   `}</style>
                   <button
