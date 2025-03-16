@@ -147,6 +147,7 @@ export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState("/mountains.jpg");
   const router = useRouter();
   const { scrollY } = useScroll();
   const titleY = useTransform(scrollY, [0, 500], [0, 300]);
@@ -172,8 +173,46 @@ export default function Home() {
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       console.log("Place selected:", place);
-      if (place && place.name) setCountry(place.name);
+      if (place && place.name) {
+        setCountry(place.name);
+        fetchCityImage(place.name); // Fetch image when city is selected
+      }
     });
+  };
+
+  const fetchCityImage = async (city) => {
+    if (!city) {
+      console.error("No city provided for image fetch");
+      setBackgroundImage("/mountains.jpg");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/getCityImage?city=${encodeURIComponent(city)}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`Response is not JSON. Content-Type: ${contentType}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          setBackgroundImage(data.imageUrl);
+          console.log("Background image set to:", data.imageUrl);
+          return data;
+        })
+        .catch(error => {
+          console.error("Error fetching city image:", error);
+          setBackgroundImage("/mountains.jpg");
+          throw error;
+        });
+    } catch (error) {
+      console.error("Outer catch - Error fetching city image:", error);
+      setBackgroundImage("/mountains.jpg");
+    }
   };
 
   const handleScriptLoad = () => {
@@ -222,7 +261,7 @@ export default function Home() {
   return (
     <>
       <Script
-        src=
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTzdaWNQ_OcoyA5KuoKpEHckRmuKiTY9A&libraries=places"
         strategy="afterInteractive"
         onLoad={handleScriptLoad}
         onError={(e) => console.error("Error loading Google Maps script:", e)}
@@ -231,7 +270,7 @@ export default function Home() {
       <div className="relative min-h-screen w-full overflow-x-hidden">
         <div
           className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-fixed transition-all duration-500"
-          style={{ backgroundImage: `url('/mountains.jpg')` }}
+          style={{ backgroundImage: `url(${backgroundImage})` }}
         >
           <div className="absolute inset-0 bg-black/30" />
           <nav
@@ -315,20 +354,22 @@ export default function Home() {
                     type="text"
                     placeholder="Type a city..."
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
+                    onChange={(e) => {
+                      setCountry(e.target.value);
+                      if (!e.target.value) setBackgroundImage("/mountains.jpg");
+                    }}
                     className="h-14 w-full px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400"
                   />
-                  {/* Enhanced CSS to ensure dropdown appears above the input */}
                   <style jsx>{`
                     .pac-container {
-                      bottom: calc(100% + 5px) !important; /* Positions above the input with a small gap */
-                      top: auto !important; /* Overrides default top positioning */
-                      transform: translateY(-100%) translateY(-5px); /* Moves it fully above with offset */
-                      z-index: 9999 !important; /* Ensures it stays above other elements */
-                      position: absolute !important; /* Forces absolute positioning relative to input */
+                      bottom: calc(100% + 5px) !important;
+                      top: auto !important;
+                      transform: translateY(-100%) translateY(-5px);
+                      z-index: 9999 !important;
+                      position: absolute !important;
                     }
                     .pac-container:after {
-                      display: none !important; /* Removes any potential arrow pointing downward */
+                      display: none !important;
                     }
                   `}</style>
                   <button
