@@ -1,157 +1,3 @@
-<<<<<<< HEAD
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
-interface TravelPlan {
-  country: string;
-  travelDate: string;
-  travelers: number;
-  selectedActivities: string[];
-  itinerary?: {
-    day: number;
-    activities: {
-      time: string;
-      activity: string;
-      description: string;
-    }[];
-  }[];
-  accommodation?: {
-    name: string;
-    description: string;
-    price: string;
-    image: string;
-  };
-  transportation?: {
-    type: string;
-    details: string;
-    price: string;
-  };
-  totalCost?: string;
-}
-
-export default function TravelPlanPage() {
-  const router = useRouter();
-  const [travelPlan, setTravelPlan] = useState<TravelPlan | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    // Get travel plan data from localStorage
-    const travelPlanDataString = localStorage.getItem('travelPlanData');
-    
-    if (!travelPlanDataString) {
-      // Redirect back to home if no travel plan data
-      router.push('/');
-      return;
-    }
-    
-    try {
-      const travelPlanData = JSON.parse(travelPlanDataString);
-      
-      // Generate itinerary and other plan details
-      generateTravelPlan(travelPlanData);
-    } catch (error) {
-      console.error('Error parsing travel plan data:', error);
-      router.push('/');
-    }
-  }, [router]);
-
-  const generateTravelPlan = async (basePlanData: TravelPlan) => {
-    setLoading(true);
-    
-    try {
-      // In a real application, you would call your backend API to generate a plan
-      const response = await fetch('http://localhost:5000/generate_plan', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          country: basePlanData.country,
-          travelDate: basePlanData.travelDate,
-          travelers: basePlanData.travelers,
-          activities: basePlanData.selectedActivities
-        }),
-      }).catch(error => {
-        console.error('Error fetching from API:', error);
-        return null;
-      });
-      
-      // If the API call fails, use mock data
-      if (!response || !response.ok) {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Create a mock itinerary based on selected activities
-        const numDays = Math.ceil(basePlanData.selectedActivities.length / 2);
-        const itinerary = Array.from({ length: numDays }, (_, dayIndex) => {
-          const dayActivities = basePlanData.selectedActivities
-            .slice(dayIndex * 2, (dayIndex + 1) * 2)
-            .map((activity, index) => ({
-              time: index === 0 ? '09:00 - 12:00' : '14:00 - 17:00',
-              activity,
-              description: `Enjoy ${activity.toLowerCase()} in ${basePlanData.country}. This is a must-do experience for travelers.`
-            }));
-            
-          // Add meals
-          return {
-            day: dayIndex + 1,
-            activities: [
-              {
-                time: '08:00 - 09:00',
-                activity: 'Breakfast',
-                description: 'Enjoy a delicious breakfast at your hotel'
-              },
-              ...dayActivities,
-              {
-                time: '12:00 - 14:00',
-                activity: 'Lunch',
-                description: 'Experience local cuisine at a recommended restaurant'
-              },
-              {
-                time: '18:00 - 20:00',
-                activity: 'Dinner',
-                description: 'Enjoy dinner at a scenic restaurant with local flavors'
-              }
-            ]
-          };
-        });
-        
-        // Complete travel plan with accommodation and transportation
-        const completePlan: TravelPlan = {
-          ...basePlanData,
-          itinerary,
-          accommodation: {
-            name: `${basePlanData.country} Luxury Resort`,
-            description: 'A 4-star hotel with excellent amenities, located in the heart of the city with easy access to major attractions.',
-            price: `$${Math.floor(120 + Math.random() * 200)} per night`,
-            image: '/hotel.jpg'
-          },
-          transportation: {
-            type: 'Private Car',
-            details: 'Comfortable transportation with professional driver for all activities and transfers.',
-            price: `$${Math.floor(50 + Math.random() * 100)} per day`
-          },
-          totalCost: `$${Math.floor(1000 + Math.random() * 2000)}`
-        };
-        
-        setTravelPlan(completePlan);
-      } else {
-        // If API call succeeds, use the returned data
-        const data = await response.json();
-        setTravelPlan({
-          ...basePlanData,
-          ...data
-        });
-      }
-    } catch (error) {
-      console.error('Error generating travel plan:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-=======
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -208,19 +54,12 @@ export default function TravelPlanPage() {
 
     fetchTravelPlan();
   }, []);
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleBackToHome = () => {
-<<<<<<< HEAD
-    // Clear travel data
-    localStorage.removeItem('travelInfo');
-    localStorage.removeItem('travelPlanData');
-    router.push('/');
-=======
     // Go back to the city details page instead of home
     const city = params?.city || "";
     if (city) {
@@ -228,7 +67,6 @@ export default function TravelPlanPage() {
     } else {
       router.push('/');
     }
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
   };
 
   if (loading) {
@@ -236,32 +74,19 @@ export default function TravelPlanPage() {
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-teal-500 mx-auto mb-4"></div>
-<<<<<<< HEAD
-          <h2 className="text-2xl font-semibold text-gray-800">Generating Your Travel Plan</h2>
-          <p className="text-gray-600 mt-2">Creating a personalized itinerary based on your selections...</p>
-=======
           <h2 className="text-2xl font-semibold text-gray-800">Loading Your Travel Plan</h2>
           <p className="text-gray-600 mt-2">Fetching your personalized itinerary...</p>
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
         </div>
       </div>
     );
   }
 
-<<<<<<< HEAD
-  if (!travelPlan) {
-=======
   if (error || !travelPlan) {
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-gray-800">Something went wrong</h2>
-<<<<<<< HEAD
-          <p className="text-gray-600 mt-2">Unable to generate your travel plan</p>
-=======
           <p className="text-gray-600 mt-2">{error || 'Unable to load your travel plan'}</p>
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
           <button 
             onClick={handleBackToHome}
             className="mt-6 bg-teal-500 text-white px-6 py-2 rounded hover:bg-teal-600 transition-colors"
@@ -273,8 +98,6 @@ export default function TravelPlanPage() {
     );
   }
 
-<<<<<<< HEAD
-=======
   // Process the travel plan data for display
   const city = travelPlan.city || params?.city || "Your Destination";
   const startDate = travelPlan.start_date || "";
@@ -421,32 +244,17 @@ export default function TravelPlanPage() {
     return null;
   };
 
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
   return (
     <main className="min-h-screen bg-gray-100">
       {/* Navigation */}
       <nav className="bg-teal-800 text-white sticky top-0 z-50 print:hidden">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
-<<<<<<< HEAD
-            <img 
-              src="/logo.png" 
-              alt="Honest Travel" 
-              className="h-14 mr-2"
-              width={70}
-              height={70}
-            />
-=======
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
             <h1 className="text-xl font-bold">Honest Travel</h1>
           </div>
           <div className="flex items-center gap-4">
             <button 
-<<<<<<< HEAD
-              onClick={() => router.push('/activities')}
-=======
               onClick={handleBackToHome}
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
               className="bg-transparent border border-white px-3 py-1 rounded hover:bg-white hover:text-teal-800 transition-colors"
             >
               Back to Activities
@@ -471,15 +279,6 @@ export default function TravelPlanPage() {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
           <div 
             className="h-64 bg-cover bg-center relative"
-<<<<<<< HEAD
-            style={{ backgroundImage: `url('/${travelPlan.country.toLowerCase()}.jpg')` }}
-          >
-            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end">
-              <div className="p-6 text-white">
-                <h1 className="text-4xl font-bold">{travelPlan.country} Travel Plan</h1>
-                <p className="mt-2 text-xl">
-                  {travelPlan.travelDate} • {travelPlan.travelers} Traveler{travelPlan.travelers !== 1 ? 's' : ''}
-=======
             style={{ backgroundImage: `url('/api/placeholder/800/400')` }}
           >
             <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end">
@@ -487,7 +286,6 @@ export default function TravelPlanPage() {
                 <h1 className="text-4xl font-bold">{city} Travel Plan</h1>
                 <p className="mt-2 text-xl">
                   {startDate} to {endDate} • {numTravelers} Traveler{numTravelers !== 1 ? 's' : ''}
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
                 </p>
               </div>
             </div>
@@ -503,47 +301,13 @@ export default function TravelPlanPage() {
               </div>
               <div className="mt-4 md:mt-0">
                 <span className="bg-teal-100 text-teal-800 px-4 py-2 rounded-full font-semibold">
-<<<<<<< HEAD
-                  Total Cost: {travelPlan.totalCost}
-=======
                   Total Cost: {parsedPlan.totalCost || 'Calculating...'}
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-<<<<<<< HEAD
-        {/* Itinerary Section */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-2xl font-semibold">Daily Itinerary</h2>
-          </div>
-          
-          <div className="divide-y divide-gray-200">
-            {travelPlan.itinerary?.map((day) => (
-              <div key={day.day} className="p-6">
-                <h3 className="text-xl font-semibold mb-4">Day {day.day}</h3>
-                
-                <div className="space-y-6">
-                  {day.activities.map((activity, index) => (
-                    <div key={index} className="flex">
-                      <div className="w-32 flex-shrink-0 text-gray-500 font-medium">
-                        {activity.time}
-                      </div>
-                      <div>
-                        <h4 className="text-lg font-semibold">{activity.activity}</h4>
-                        <p className="text-gray-600 mt-1">{activity.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-=======
         {/* Special rendering for markdown content */}
         {renderMarkdownContent()}
 
@@ -583,7 +347,6 @@ export default function TravelPlanPage() {
             </div>
           </div>
         )}
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
 
         {/* Accommodation & Transportation */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -596,17 +359,6 @@ export default function TravelPlanPage() {
             <div className="p-6">
               <div 
                 className="h-48 bg-cover bg-center rounded-lg mb-4"
-<<<<<<< HEAD
-                style={{ backgroundImage: `url('${travelPlan.accommodation?.image}')` }}
-              ></div>
-              
-              <h3 className="text-xl font-semibold">{travelPlan.accommodation?.name}</h3>
-              <p className="text-gray-600 mt-2">{travelPlan.accommodation?.description}</p>
-              
-              <div className="mt-4 flex justify-between items-center">
-                <span className="text-gray-600">Price</span>
-                <span className="font-semibold">{travelPlan.accommodation?.price}</span>
-=======
                 style={{ backgroundImage: `url('/api/placeholder/400/200')` }}
               ></div>
               
@@ -616,7 +368,6 @@ export default function TravelPlanPage() {
               <div className="mt-4 flex justify-between items-center">
               <span className="text-gray-600">Price</span>
                 <span className="font-semibold">{parsedPlan.accommodation?.price || 'Contact for pricing'}</span>
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
               </div>
             </div>
           </div>
@@ -633,17 +384,6 @@ export default function TravelPlanPage() {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
-<<<<<<< HEAD
-                  <h3 className="text-xl font-semibold ml-4">{travelPlan.transportation?.type}</h3>
-                </div>
-              </div>
-              
-              <p className="text-gray-600">{travelPlan.transportation?.details}</p>
-              
-              <div className="mt-4 flex justify-between items-center">
-                <span className="text-gray-600">Price</span>
-                <span className="font-semibold">{travelPlan.transportation?.price}</span>
-=======
                   <h3 className="text-xl font-semibold ml-4">{parsedPlan.transportation?.type || 'Private Transportation'}</h3>
                 </div>
               </div>
@@ -653,7 +393,6 @@ export default function TravelPlanPage() {
               <div className="mt-4 flex justify-between items-center">
                 <span className="text-gray-600">Price</span>
                 <span className="font-semibold">{parsedPlan.transportation?.price || 'Contact for pricing'}</span>
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
               </div>
             </div>
           </div>
@@ -681,16 +420,7 @@ export default function TravelPlanPage() {
         <div className="print:hidden bg-gray-50 rounded-lg shadow p-6 text-center mb-8">
           <h3 className="text-lg font-semibold mb-2">Share Your Travel Plan</h3>
           <div className="flex justify-center space-x-4">
-<<<<<<< HEAD
-            <button className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z" />
-              </svg>
-            </button>
-            <button className="bg-blue-400 text-white p-2 rounded-full hover:bg-blue-500">
-=======
             <button className="bg-sky-500 text-white p-2 rounded-full hover:bg-sky-600">
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
               </svg>
@@ -702,32 +432,17 @@ export default function TravelPlanPage() {
             </button>
             <button className="bg-red-600 text-white p-2 rounded-full hover:bg-red-700">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-<<<<<<< HEAD
-                <path d="M7 11v2.4h3.97c-.16 1.029-1.2 3.02-3.97 3.02-2.39 0-4.34-1.979-4.34-4.42 0-2.44 1.95-4.42 4.34-4.42 1.36 0 2.27.58 2.79 1.08l1.9-1.83c-1.22-1.14-2.8-1.83-4.69-1.83-3.87 0-7 3.13-7 7s3.13 7 7 7c4.04 0 6.721-2.84 6.721-6.84 0-.46-.051-.81-.111-1.16h-6.61zm0 0 17 2h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z" fillRule="evenodd" clipRule="evenodd" />
-=======
                 <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
               </svg>
             </button>
             <button className="bg-purple-600 text-white p-2 rounded-full hover:bg-purple-700">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
               </svg>
             </button>
           </div>
         </div>
         
-<<<<<<< HEAD
-        {/* Footer */}
-        <div className="print:hidden text-center text-gray-500 text-sm pt-4 pb-12">
-          <p>© {new Date().getFullYear()} Honest Travel. All rights reserved.</p>
-          <div className="mt-2 flex justify-center space-x-4">
-            <a href="#" className="hover:text-teal-600">Terms of Service</a>
-            <a href="#" className="hover:text-teal-600">Privacy Policy</a>
-            <a href="#" className="hover:text-teal-600">Contact Us</a>
-          </div>
-        </div>
-=======
         {/* Notes and Extra Info */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
           <div className="p-6 border-b border-gray-200">
@@ -779,7 +494,6 @@ export default function TravelPlanPage() {
             <a href="#" className="hover:text-gray-700">Contact Us</a>
           </div>
         </footer>
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
       </div>
     </main>
   );

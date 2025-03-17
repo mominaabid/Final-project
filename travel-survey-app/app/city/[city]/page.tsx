@@ -67,20 +67,10 @@ export default function CityDetails() {
       alert("Please select at least one activity.");
       return;
     }
-<<<<<<< HEAD
-
-=======
-  
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
     if (!cityInfo) {
       alert("City information is missing. Please restart.");
       return;
     }
-<<<<<<< HEAD
-
-=======
-  
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
     try {
       const response = await fetch("http://127.0.0.1:5000/generate_travel_plan", {
         method: "POST",
@@ -93,7 +83,6 @@ export default function CityDetails() {
           selected_activities: selectedActivities,
         }),
       });
-<<<<<<< HEAD
 
       if (!response.ok) {
         throw new Error(`HTTP Error! Status: ${response.status}`);
@@ -103,20 +92,6 @@ export default function CityDetails() {
       console.log("Generated Travel Plan:", plan);
 
       localStorage.setItem("travelPlan", JSON.stringify(plan));
-=======
-  
-      if (!response.ok) {
-        throw new Error(`HTTP Error! Status: ${response.status}`);
-      }
-  
-      const plan = await response.json();
-      console.log("Generated Travel Plan:", plan);
-  
-      // Store the travel plan in localStorage
-      localStorage.setItem("travelPlan", JSON.stringify(plan));
-  
-      // Redirect to the travel plan page
->>>>>>> 79cc7be1b32a73f43cf414cc142b49b79ccc72db
       router.push(`/travel-plan/${city}`);
     } catch (error) {
       console.error("Error generating travel plan:", error);
