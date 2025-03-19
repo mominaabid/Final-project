@@ -13,19 +13,17 @@ export default function CityDetails() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [travelers, setTravelers] = useState("");
-  const [travelPlan, setTravelPlan] = useState(null);
 
   useEffect(() => {
     setCity(params.city as string);
   }, [params.city]);
 
   useEffect(() => {
-    // Retrieve data from localStorage
     const storedData = localStorage.getItem("cityInfo");
     const storedStartDate = localStorage.getItem("start_date");
     const storedEndDate = localStorage.getItem("end_date");
     const storedTravelers = localStorage.getItem("travelers");
-    
+
     if (storedData) {
       try {
         const parsedData = JSON.parse(storedData);
@@ -33,9 +31,8 @@ export default function CityDetails() {
 
         if (parsedData.activities?.length > 0) {
           setCityInfo(parsedData);
-          setActivities(parsedData.activities); // Set activities separately
-          
-          // Set dates from cityInfo or direct localStorage items
+          setActivities(parsedData.activities);
+
           setStartDate(parsedData.start_date || storedStartDate || "");
           setEndDate(parsedData.end_date || storedEndDate || "");
           setTravelers(parsedData.travelers || storedTravelers || "");
@@ -62,44 +59,24 @@ export default function CityDetails() {
     );
   };
 
-  const handleSubmitActivities = async () => {
+  const handleSubmitActivities = () => {
     if (selectedActivities.length === 0) {
       alert("Please select at least one activity.");
       return;
     }
+
     if (!cityInfo) {
       alert("City information is missing. Please restart.");
       return;
     }
-    try {
-      const response = await fetch("http://127.0.0.1:5000/generate_travel_plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          city,
-          start_date: startDate,
-          end_date: endDate,
-          num_travelers: parseInt(travelers, 10),
-          selected_activities: selectedActivities,
-        }),
-      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP Error! Status: ${response.status}`);
-      }
+    // Store selected activities in localStorage
+    localStorage.setItem("selected_activities", JSON.stringify(selectedActivities));
 
-      const plan = await response.json();
-      console.log("Generated Travel Plan:", plan);
-
-      localStorage.setItem("travelPlan", JSON.stringify(plan));
-      router.push(`/travel-plan/${city}`);
-    } catch (error) {
-      console.error("Error generating travel plan:", error);
-      alert("Failed to generate travel plan. Check API or console for errors.");
-    }
+    // Redirect to the survey screen
+    router.push(`/survey/${city}`);
   };
 
-  // Format the date range for display
   const formatDateRange = () => {
     if (!startDate && !endDate) return "Not specified";
     if (startDate && !endDate) return startDate;
@@ -152,7 +129,7 @@ export default function CityDetails() {
             disabled:bg-gray-600 disabled:cursor-not-allowed"
           disabled={selectedActivities.length === 0}
         >
-          Generate Travel Plan
+          Next: Answer Survey
         </button>
       </div>
     </div>
