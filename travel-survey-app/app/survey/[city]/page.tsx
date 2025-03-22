@@ -59,11 +59,15 @@ export default function SurveyPage() {
       if (!response.ok) throw new Error(`Error: ${response.statusText}`);
       const data = await response.json();
       console.log("Survey submitted:", data);
-      router.push(`/travel-plan?city=${encodeURIComponent(city)}`);
+  
+      // ✅ Corrected navigation to match dynamic route
+      router.push(`/travel-plan/${encodeURIComponent(city)}`);
+      
     } catch (error) {
       console.error("Error submitting survey:", error);
     }
   };
+  
   
   
 
