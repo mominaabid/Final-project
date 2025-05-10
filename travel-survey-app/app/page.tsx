@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, X } from "lucide-react";
+import { ChevronRight, ChevronLeft, X, Github, Twitter, Instagram, Facebook } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 
@@ -411,8 +411,9 @@ export default function Home() {
           />
         )}
 
+        {/* Updated second section from the second code */}
         <div
-          className="relative min-h-screen py-13 px-4 md:px-8 bg-fixed bg-cover bg-center"
+          className="relative min-h-screen py-16 px-4 md:px-8 bg-fixed bg-cover bg-center"
           style={{ backgroundImage: `url('/section-bg.jpg')` }}
         >
           <div className="absolute inset-0 bg-black bg-opacity-50"></div>
@@ -423,7 +424,7 @@ export default function Home() {
               transition={{ duration: 0.5 }}
               src="/travel-experience.jpg"
               alt="Travel Experience"
-              className="w-full md:w-1/2 rounded-lg shadow-2xl object-cover h-[400px]"
+              className="w-full md:w-1/2 rounded-lg shadow-2xl object-cover h-400"
             />
             <motion.div
               initial={{ opacity: 0, x: 50 }}
@@ -448,6 +449,75 @@ export default function Home() {
             </motion.div>
           </div>
         </div>
+         
+        {/* Added Footer from the second code */}
+        <footer className="bg-gray-900 text-white">
+          <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div>
+                <h3 className="text-xl font-bold mb-4">Honest Travel</h3>
+                <p className="text-gray-300">
+                  Your journey begins with us. Experience the world in a way that's authentic, sustainable, and unforgettable.
+                </p>
+              </div>
+              
+              <div>
+                <h4 className="text-lg font-semibold mb-4">Destinations</h4>
+                <ul className="space-y-2">
+                  {["Europe", "Asia", "North America", "South America", "Africa", "Australia"].map((continent) => (
+                    <li key={continent}>
+                      <a href="#" className="text-gray-300 hover:text-teal-400 transition">{continent}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="text-lg font-semibold mb-4">Travel Types</h4>
+                <ul className="space-y-2">
+                  {["Adventure", "Cultural", "Beach", "City Break", "Wildlife", "Food & Wine"].map((type) => (
+                    <li key={type}>
+                      <a href="#" className="text-gray-300 hover:text-teal-400 transition">{type}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="text-lg font-semibold mb-4">Contact</h4>
+                <address className="not-italic text-gray-300 mb-4">
+                  1234 Travel Lane<br />
+                  Adventure City, TC 54321<br />
+                  contact@honesttravel.com<br />
+                  +1 (555) 123-4567
+                </address>
+                <div className="flex space-x-4">
+                  <a href="#" className="text-gray-300 hover:text-teal-400 transition">
+                    <Facebook size={20} />
+                  </a>
+                  <a href="#" className="text-gray-300 hover:text-teal-400 transition">
+                    <Twitter size={20} />
+                  </a>
+                  <a href="#" className="text-gray-300 hover:text-teal-400 transition">
+                    <Instagram size={20} />
+                  </a>
+                  <a href="#" className="text-gray-300 hover:text-teal-400 transition">
+                    <Github size={20} />
+                  </a>
+                </div>
+              </div>
+            </div>
+            
+            <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+              <p className="text-gray-400">&copy; {new Date().getFullYear()} Honest Travel. All rights reserved.</p>
+              <div className="flex space-x-6 mt-4 md:mt-0">
+                <a href="#" className="text-gray-400 hover:text-teal-400 transition">Privacy Policy</a>
+                <a href="#" className="text-gray-400 hover:text-teal-400 transition">Terms of Service</a>
+                <a href="#" className="text-gray-400 hover:text-teal-400 transition">Cookies</a>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     </>
   );
