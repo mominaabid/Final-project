@@ -1,12 +1,10 @@
-"use client";
-
+"use client"; // Ensure it's a client component
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 
 interface TravelPlan {
   city: string;
-  country?: string;
   start_date: string;
   end_date: string;
   city_description: string;
@@ -187,50 +185,25 @@ export default function TravelPlanPage() {
   const city = params.city as string;
   
   const [travelPlan, setTravelPlan] = useState<TravelPlan | null>(null);
-  const [planData, setPlanData] = useState<PlanData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState("");
-  const [backgroundImage, setBackgroundImage] = useState("");
-  const [country, setCountry] = useState("");
   
   useEffect(() => {
     if (!city) return;
     
     const fetchData = async () => {
-      setLoading(true);
-      setPageLoading(true);
-      
       try {
         console.log(`Fetching travel plan for city: ${city}`);
-        
-        // Simulate loading time for visual effect
-        await new Promise(resolve => setTimeout(resolve, 1500));
         
         const response = await fetch(`http://localhost:5000/api/get-travel-plan?city=${city}`);
         if (!response.ok) throw new Error("Failed to fetch travel plan");
         
         const data = await response.json();
         setTravelPlan(data);
-        
-        // Parse travel_plan if it's a JSON string
-        const parsed = typeof data.travel_plan === 'string' 
-          ? JSON.parse(data.travel_plan) 
-          : data.travel_plan;
-        
-        setPlanData(parsed);
-        setCountry(data.country || "");
-        
-        // Fetch background image
-        fetchBackgroundImage(data.city, data.country);
       } catch (error: any) {
         setError(error.message);
       } finally {
         setLoading(false);
-        // Add a small delay before removing the loader
-        setTimeout(() => {
-          setPageLoading(false);
-        }, 500);
       }
     };
     
