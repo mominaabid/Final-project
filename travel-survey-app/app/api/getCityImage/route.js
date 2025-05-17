@@ -9,10 +9,9 @@ export async function GET(request) {
     });
   }
 
-  const UNSPLASH_API_KEY = "EWV0yudFGZxUjKTUv6TtY9Qt0Iab-F-QZd-_3WFwRF4"; // Replace with your actual Unsplash Access Key
+  const UNSPLASH_API_KEY = "vTu08vnDNvhtIehJocV2vGrfX1gGgDdzt1dmEEH-nBE"; // Replace with your actual Unsplash Access Key
   const controller = new AbortController();
 
-  // Simple relevance check function
   const checkImageRelevance = (result, location) => {
     const description = (result.description || result.alt_description || "").toLowerCase();
     const tags = result.tags ? result.tags.map(tag => tag.title.toLowerCase()) : [];
@@ -26,7 +25,6 @@ export async function GET(request) {
 
     let bgImage = "/mountains.jpg";
 
-    // Primary search for famous landmarks
     const bgResponse = await fetch(
       `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
         `${simplifiedLocation} famous landmark building historical site`
@@ -36,7 +34,6 @@ export async function GET(request) {
 
     if (!bgResponse.ok) {
       console.error(`Unsplash primary fetch failed: ${bgResponse.status} - ${await bgResponse.text()}`);
-      // Instead of throwing, proceed to fallback
     } else {
       const bgData = await bgResponse.json();
       if (bgData.results && bgData.results.length > 0) {
@@ -47,7 +44,6 @@ export async function GET(request) {
       }
     }
 
-    // Fallback search if no relevant image found
     if (bgImage === "/mountains.jpg") {
       const fallbackResponse = await fetch(
         `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
@@ -73,7 +69,7 @@ export async function GET(request) {
   } catch (error) {
     console.error("Error in getCityImage API:", error);
     return new Response(JSON.stringify({ imageUrl: "/mountains.jpg", error: "Failed to fetch image", details: error.message }), {
-      status: 200, // Return 200 with fallback instead of 500
+      status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } finally {

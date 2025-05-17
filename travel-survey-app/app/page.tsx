@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, X, Github, Twitter, Instagram, Facebook } from "lucide-react";
+import { ChevronRight, ChevronLeft, X, Github, Twitter, Instagram, Facebook, User, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Script from "next/script";
 
 const Calendar = ({ onSelect, onClose }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -143,17 +142,28 @@ export default function Home() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState({ start: new Date(), end: new Date() });
   const [travellers, setTravellers] = useState(1);
-  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState("/mountains.jpg");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const router = useRouter();
   const { scrollY } = useScroll();
   const titleY = useTransform(scrollY, [0, 500], [0, 300]);
   const taglineY = useTransform(scrollY, [0, 500], [0, 200]);
   const formOpacity = useTransform(scrollY, [0, 200], [1, 0.8]);
-  const cityInputRef = useRef(null);
+
+  useEffect(() => {
+    // Check if user is logged in on mount
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const email = localStorage.getItem("userEmail") || "";
+    if (loggedIn) {
+      setIsLoggedIn(true);
+      setUserEmail(email);
+    }
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -161,94 +171,77 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const initializeAutocomplete = () => {
-    if (!window.google || !window.google.maps || !cityInputRef.current) {
-      console.error("Google Maps API not loaded or input ref not found");
-      return;
-    }
-    console.log("Initializing Google Places Autocomplete...");
-    const autocomplete = new window.google.maps.places.Autocomplete(cityInputRef.current, {
-      types: ["(cities)"],
-    });
-    autocomplete.addListener("place_changed", () => {
-      const place = autocomplete.getPlace();
-      console.log("Place selected:", place);
-      if (place && place.name) {
-        setCountry(place.name);
-        fetchCityImage(place.name); // Fetch image when city is selected
-      }
-    });
-  };
-
   const fetchCityImage = async (city) => {
     if (!city) {
       console.error("No city provided for image fetch");
       setBackgroundImage("/mountains.jpg");
+      localStorage.setItem("backgroundImage", "/mountains.jpg");
       return;
     }
 
     try {
-      const response = await fetch(`/api/getCityImage?city=${encodeURIComponent(city)}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            throw new Error(`Response is not JSON. Content-Type: ${contentType}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          setBackgroundImage(data.imageUrl);
-          console.log("Background image set to:", data.imageUrl);
-          return data;
-        })
-        .catch(error => {
-          console.error("Error fetching city image:", error);
-          setBackgroundImage("/mountains.jpg");
-          throw error;
-        });
+      const response = await fetch(`/api/getCityImage?city=${encodeURIComponent(city)}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(`Response is not JSON. Content-Type: ${contentType}`);
+      }
+      const data = await response.json();
+      setBackgroundImage(data.imageUrl);
+      localStorage.setItem("backgroundImage", data.imageUrl);
+      console.log("Background image set to:", data.imageUrl);
     } catch (error) {
-      console.error("Outer catch - Error fetching city image:", error);
+      console.error("Error fetching city image:", error);
       setBackgroundImage("/mountains.jpg");
+      localStorage.setItem("backgroundImage", "/mountains.jpg");
     }
   };
 
-  const handleScriptLoad = () => {
-    console.log("Google Maps script loaded successfully");
-    setIsGoogleLoaded(true);
-    initializeAutocomplete();
+  const handleCityChange = (e) => {
+    setCity(e.target.value);
   };
 
-  useEffect(() => {
-    if (isGoogleLoaded) initializeAutocomplete();
-  }, [isGoogleLoaded]);
+  const handleCityConfirm = () => {
+    if (city.trim()) {
+      fetchCityImage(city);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && city.trim()) {
+      handleCityConfirm();
+    }
+  };
 
   const handlePlanNow = async () => {
-    if (!country) {
+    if (!city) {
       alert("Please enter a city name");
       return;
     }
+
+    await fetchCityImage(city);
+
     const startDate = dateRange.start.toISOString().split("T")[0];
     const endDate = dateRange.end.toISOString().split("T")[0];
-    console.log("Sending Data:", { city: country, start_date: startDate, end_date: endDate, travelers: travellers });
+    console.log("Sending Data:", { city, start_date: startDate, end_date: endDate, travelers: travellers });
     try {
       const response = await fetch("http://127.0.0.1:5000/get_city_info", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ city: country, start_date: startDate, end_date: endDate, travelers: travellers }),
+        body: JSON.stringify({ city, start_date: startDate, end_date: endDate, travelers: travellers }),
       });
       if (!response.ok) throw new Error(`HTTP Error! Status: ${response.status}`);
       const data = await response.json();
       console.log("API Response:", data);
       if (data.description && data.activities?.length > 0) {
         localStorage.setItem("cityInfo", JSON.stringify({ ...data, start_date: startDate, end_date: endDate, travelers: travellers }));
-        localStorage.setItem("city", country);
+        localStorage.setItem("city", city);
         localStorage.setItem("start_date", startDate);
         localStorage.setItem("end_date", endDate);
         localStorage.setItem("travelers", travellers.toString());
-        router.push(`/city/${country}`);
+        router.push(`/city/${city}`);
       } else {
         alert("No activities found for this city.");
       }
@@ -258,267 +251,349 @@ export default function Home() {
     }
   };
 
-  return (
-    <>
-      <Script
-        src=""
-        strategy="afterInteractive"
-        onLoad={handleScriptLoad}
-        onError={(e) => console.error("Error loading Google Maps script:", e)}
-      />
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("selectedPackage");
+    setIsLoggedIn(false);
+    setUserEmail("");
+    setShowUserMenu(false);
+  };
 
-      <div className="relative min-h-screen w-full overflow-x-hidden">
-        <div
-          className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-fixed transition-all duration-500"
-          style={{ backgroundImage: `url(${backgroundImage})` }}
+  const getInitial = (email) => email.charAt(0).toUpperCase();
+
+  return (
+    <div className="relative min-h-screen w-full overflow-x-hidden">
+      <div
+        className="relative h-screen w-full flex items-center justify-center bg-cover bg-center bg-fixed transition-all duration-500"
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      >
+        <div className="absolute inset-0 bg-black/30" />
+        <nav
+          className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+            isScrolled ? "bg-black/80 backdrop-blur-md" : "bg-transparent"
+          }`}
         >
-          <div className="absolute inset-0 bg-black/30" />
-          <nav
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-              isScrolled ? "bg-black/80 backdrop-blur-md" : "bg-transparent"
-            }`}
-          >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-              <div className="flex justify-between items-center">
-                <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-xl font-bold text-white tracking-widest">
-                  Honest Travel
-                </motion.h1>
-                <div className="hidden md:flex space-x-8">
-                  {["Home", "About", "Packages"].map((item, index) => (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex justify-between items-center">
+              <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-xl font-bold text-white tracking-widest">
+                Honest Travel
+              </motion.h1>
+              <div className="hidden md:flex space-x-8 items-center">
+                {["Home", "About", "Packages"].map((item, index) => (
+                  <motion.button
+                    key={item}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="text-white hover:text-teal-400 transition"
+                    onClick={() => {
+                      if (item === "Packages") router.push(`/travel-packages/${city || "default-city"}`);
+                    }}
+                  >
+                    {item}
+                  </motion.button>
+                ))}
+                {/* Login/User Icon */}
+                {isLoggedIn ? (
+                  <div className="relative">
                     <motion.button
-                      key={item}
+                      onClick={() => setShowUserMenu(!showUserMenu)}
                       initial={{ opacity: 0, y: -20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="text-white hover:text-teal-400 transition"
+                      transition={{ delay: 0.3 }}
+                      className="w-10 h-10 bg-teal-500 text-white rounded-full flex items-center justify-center hover:bg-teal-600 transition text-lg font-semibold"
                     >
-                      {item}
+                      {getInitial(userEmail)}
                     </motion.button>
-                  ))}
-                </div>
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-white">
-                  ☰
-                </button>
-              </div>
-            </div>
-          </nav>
-
-          <AnimatePresence>
-            {isMenuOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="fixed top-16 right-4 bg-black/90 backdrop-blur-md rounded-lg py-2 px-4 z-50 md:hidden"
-              >
-                {["Home", "About", "Packages"].map((item) => (
-                  <motion.div key={item} whileHover={{ x: 10 }} className="py-2 text-white hover:text-teal-400 cursor-pointer">
-                    {item}
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="relative z-10 px-4 text-center">
-            <motion.div style={{ y: titleY }} className="mb-24">
-              <motion.h1
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-6xl md:text-8xl font-bold text-white tracking-wider mb-4"
-              >
-                DISCOVER
-              </motion.h1>
-              <motion.p
-                style={{ y: taglineY }}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-xl md:text-2xl text-white"
-              >
-                Travel Smarter, Not Harder
-              </motion.p>
-            </motion.div>
-
-            <motion.div style={{ opacity: formOpacity }} className="w-full max-w-5xl mx-auto">
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="bg-gray-800/80 backdrop-blur-md rounded-xl p-6 md:p-8 shadow-2xl mx-4"
-              >
-                <h2 className="text-xl font-bold text-white text-center mb-6">Plan Your Tour</h2>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
-                  <input
-                    ref={cityInputRef}
-                    type="text"
-                    placeholder="Type a city..."
-                    value={country}
-                    onChange={(e) => {
-                      setCountry(e.target.value);
-                      if (!e.target.value) setBackgroundImage("/mountains.jpg");
-                    }}
-                    className="h-14 w-full px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400"
-                  />
-                  <style jsx>{`
-                    .pac-container {
-                      bottom: calc(100% + 5px) !important;
-                      top: auto !important;
-                      transform: translateY(-100%) translateY(-5px);
-                      z-index: 9999 !important;
-                      position: absolute !important;
-                    }
-                    .pac-container:after {
-                      display: none !important;
-                    }
-                  `}</style>
-                  <button
-                    onClick={() => setShowDatePicker(true)}
-                    className="h-14 px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-left truncate hover:bg-gray-600/50 transition-colors"
-                  >
-                    {dateRange.start.toLocaleDateString()} - {dateRange.end.toLocaleDateString()}
-                  </button>
-                  <select
-                    value={travellers}
-                    onChange={(e) => setTravellers(Number(e.target.value))}
-                    className="h-14 px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                      <option key={num} value={num}>{`${num} Traveler${num !== 1 ? "s" : ""}`}</option>
-                    ))}
-                  </select>
+                    <AnimatePresence>
+                      {showUserMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute right-0 mt-2 bg-black/90 backdrop-blur-md rounded-lg py-2 px-4 z-50"
+                        >
+                          <p className="text-white text-sm mb-2">{userEmail}</p>
+                          <motion.button
+                            whileHover={{ x: 5 }}
+                            onClick={handleLogout}
+                            className="flex items-center text-white hover:text-teal-400 cursor-pointer"
+                          >
+                            <LogOut size={16} className="mr-2" />
+                            Logout
+                          </motion.button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handlePlanNow}
-                    className="h-14 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    onClick={() => router.push(`/travel-packages/${city || "default-city"}`)}
+                    className="text-white hover:text-teal-400 transition"
                   >
-                    Plan Now
+                    Login
                   </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
+                )}
+              </div>
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-white">
+                ☰
+              </button>
+            </div>
           </div>
-        </div>
+        </nav>
 
-        {showDatePicker && (
-          <Calendar
-            onSelect={(range) => {
-              console.log("Selected Date Range:", range);
-              setDateRange(range);
-            }}
-            onClose={() => setShowDatePicker(false)}
-          />
-        )}
-
-        {/* Updated second section from the second code */}
-        <div
-          className="relative min-h-screen py-16 px-4 md:px-8 bg-fixed bg-cover bg-center"
-          style={{ backgroundImage: `url('/section-bg.jpg')` }}
-        >
-          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-          <div className="max-w-6xl mx-auto min-h-screen flex flex-col md:flex-row gap-8 items-center justify-center relative z-10">
-            <motion.img
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              src="/travel-experience.jpg"
-              alt="Travel Experience"
-              className="w-full md:w-1/2 rounded-lg shadow-2xl object-cover h-400"
-            />
+        <AnimatePresence>
+          {isMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="w-full md:w-1/2"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="fixed top-16 right-4 bg-black/90 backdrop-blur-md rounded-lg py-2 px-4 z-50 md:hidden"
             >
-              <h2 className="text-4xl font-bold mb-6 text-white">Experience the World</h2>
-              <p className="text-lg leading-relaxed text-gray-100">
-                Discover amazing destinations around the globe with our expertly curated travel packages. Whether you're
-                seeking adventure in the mountains, relaxation on pristine beaches, or cultural experiences in historic
-                cities, we have the perfect journey waiting for you. Our experienced team ensures that every detail of
-                your trip is carefully planned, allowing you to focus on creating unforgettable memories.
-              </p>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="mt-8 bg-teal-500 text-white px-8 py-3 rounded-lg hover:bg-teal-600 transition-colors duration-300 shadow-xl"
-              >
-                Explore More
-              </motion.button>
+              {["Home", "About", "Packages"].map((item) => (
+                <motion.div
+                  key={item}
+                  whileHover={{ x: 10 }}
+                  className="py-2 text-white hover:text-teal-400 cursor-pointer"
+                  onClick={() => {
+                    if (item === "Packages") router.push(`/travel-packages/${city || "default-city"}`);
+                  }}
+                >
+                  {item}
+                </motion.div>
+              ))}
+              {/* Mobile Login/User Icon */}
+              {isLoggedIn ? (
+                <div className="relative">
+                  <motion.div
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    whileHover={{ x: 10 }}
+                    className="py-2 text-white hover:text-teal-400 cursor-pointer flex items-center"
+                  >
+                    <div className="w-6 h-6 bg-teal-500 text-white rounded-full flex items-center justify-center mr-2 text-xs font-semibold">
+                      {getInitial(userEmail)}
+                    </div>
+                    Profile
+                  </motion.div>
+                  <AnimatePresence>
+                    {showUserMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute right-0 mt-2 bg-black/90 backdrop-blur-md rounded-lg py-2 px-4 z-50"
+                      >
+                        <p className="text-white text-sm mb-2">{userEmail}</p>
+                        <motion.button
+                          whileHover={{ x: 5 }}
+                          onClick={handleLogout}
+                          className="flex items-center text-white hover:text-teal-400 cursor-pointer"
+                        >
+                          <LogOut size={16} className="mr-2" />
+                          Logout
+                        </motion.button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <motion.div
+                  whileHover={{ x: 10 }}
+                  onClick={() => router.push(`/travel-packages/${city || "default-city"}`)}
+                  className="py-2 text-white hover:text-teal-400 cursor-pointer"
+                >
+                  Login
+                </motion.div>
+              )}
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="relative z-10 px-4 text-center">
+          <motion.div style={{ y: titleY }} className="mb-24">
+            <motion.h1
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-6xl md:text-8xl font-bold text-white tracking-wider mb-4"
+            >
+              DISCOVER
+            </motion.h1>
+            <motion.p
+              style={{ y: taglineY }}
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-xl md:text-2xl text-white"
+            >
+              Travel Smarter, Not Harder
+            </motion.p>
+          </motion.div>
+
+          <motion.div style={{ opacity: formOpacity }} className="w-full max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-gray-800/80 backdrop-blur-md rounded-xl p-6 md:p-8 shadow-2xl mx-4"
+            >
+              <h2 className="text-xl font-bold text-white text-center mb-6">Plan Your Tour</h2>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+                <input
+                  type="text"
+                  placeholder="Type a city..."
+                  value={city}
+                  onChange={handleCityChange}
+                  onKeyPress={handleKeyPress}
+                  className="h-14 w-full px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400"
+                />
+                <button
+                  onClick={() => setShowDatePicker(true)}
+                  className="h-14 px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-left truncate hover:bg-gray-600/50 transition-colors"
+                >
+                  {dateRange.start.toLocaleDateString()} - {dateRange.end.toLocaleDateString()}
+                </button>
+                <select
+                  value={travellers}
+                  onChange={(e) => setTravellers(Number(e.target.value))}
+                  className="h-14 px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                    <option key={num} value={num}>{`${num} Traveler${num !== 1 ? "s" : ""}`}</option>
+                  ))}
+                </select>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handlePlanNow}
+                  className="h-14 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+                >
+                  Plan Now
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+
+      {showDatePicker && (
+        <Calendar
+          onSelect={(range) => {
+            console.log("Selected Date Range:", range);
+            setDateRange(range);
+          }}
+          onClose={() => setShowDatePicker(false)}
+        />
+      )}
+
+      <div
+        className="relative min-h-screen py-16 px-4 md:px-8 bg-fixed bg-cover bg-center"
+        style={{ backgroundImage: `url('/section-bg.jpg')` }}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div className="max-w-6xl mx-auto min-h-screen flex flex-col md:flex-row gap-8 items-center justify-center relative z-10">
+          <motion.img
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            src="/travel-experience.jpg"
+            alt="Travel Experience"
+            className="w-full md:w-1/2 rounded-lg shadow-2xl object-cover h-400"
+          />
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full md:w-1/2"
+          >
+            <h2 className="text-4xl font-bold mb-6 text-white">Experience the World</h2>
+            <p className="text-lg leading-relaxed text-gray-100">
+              Discover amazing destinations around the globe with our expertly curated travel packages. Whether you're
+              seeking adventure in the mountains, relaxation on pristine beaches, or cultural experiences in historic
+              cities, we have the perfect journey waiting for you. Our experienced team ensures that every detail of
+              your trip is carefully planned, allowing you to focus on creating unforgettable memories.
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="mt-8 bg-teal-500 text-white px-8 py-3 rounded-lg hover:bg-teal-600 transition-colors duration-300 shadow-xl"
+            >
+              Explore More
+            </motion.button>
+          </motion.div>
+        </div>
+      </div>
+
+      <footer className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-xl font-bold mb-4">Honest Travel</h3>
+              <p className="text-gray-300">
+                Your journey begins with us. Experience the world in a way that's authentic, sustainable, and unforgettable.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Destinations</h4>
+              <ul className="space-y-2">
+                {["Europe", "Asia", "North America", "South America", "Africa", "Australia"].map((continent) => (
+                  <li key={continent}>
+                    <a href="#" className="text-gray-300 hover:text-teal-400 transition">{continent}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Travel Types</h4>
+              <ul className="space-y-2">
+                {["Adventure", "Cultural", "Beach", "City Break", "Wildlife", "Food & Wine"].map((type) => (
+                  <li key={type}>
+                    <a href="#" className="text-gray-300 hover:text-teal-400 transition">{type}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Contact</h4>
+              <address className="not-italic text-gray-300 mb-4">
+                1234 Travel Lane<br />
+                Adventure City, TC 54321<br />
+                contact@honesttravel.com<br />
+                +1 (555) 123-4567
+              </address>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-300 hover:text-teal-400 transition">
+                  <Facebook size={20} />
+                </a>
+                <a href="#" className="text-gray-300 hover:text-teal-400 transition">
+                  <Twitter size={20} />
+                </a>
+                <a href="#" className="text-gray-300 hover:text-teal-400 transition">
+                  <Instagram size={20} />
+                </a>
+                <a href="#" className="text-gray-300 hover:text-teal-400 transition">
+                  <Github size={20} />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400">© {new Date().getFullYear()} Honest Travel. All rights reserved.</p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <a href="#" className="text-gray-400 hover:text-teal-400 transition">Privacy Policy</a>
+              <a href="#" className="text-gray-400 hover:text-teal-400 transition">Terms of Service</a>
+              <a href="#" className="text-gray-400 hover:text-teal-400 transition">Cookies</a>
+            </div>
           </div>
         </div>
-         
-        {/* Added Footer from the second code */}
-        <footer className="bg-gray-900 text-white">
-          <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div>
-                <h3 className="text-xl font-bold mb-4">Honest Travel</h3>
-                <p className="text-gray-300">
-                  Your journey begins with us. Experience the world in a way that's authentic, sustainable, and unforgettable.
-                </p>
-              </div>
-              
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Destinations</h4>
-                <ul className="space-y-2">
-                  {["Europe", "Asia", "North America", "South America", "Africa", "Australia"].map((continent) => (
-                    <li key={continent}>
-                      <a href="#" className="text-gray-300 hover:text-teal-400 transition">{continent}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Travel Types</h4>
-                <ul className="space-y-2">
-                  {["Adventure", "Cultural", "Beach", "City Break", "Wildlife", "Food & Wine"].map((type) => (
-                    <li key={type}>
-                      <a href="#" className="text-gray-300 hover:text-teal-400 transition">{type}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Contact</h4>
-                <address className="not-italic text-gray-300 mb-4">
-                  1234 Travel Lane<br />
-                  Adventure City, TC 54321<br />
-                  contact@honesttravel.com<br />
-                  +1 (555) 123-4567
-                </address>
-                <div className="flex space-x-4">
-                  <a href="#" className="text-gray-300 hover:text-teal-400 transition">
-                    <Facebook size={20} />
-                  </a>
-                  <a href="#" className="text-gray-300 hover:text-teal-400 transition">
-                    <Twitter size={20} />
-                  </a>
-                  <a href="#" className="text-gray-300 hover:text-teal-400 transition">
-                    <Instagram size={20} />
-                  </a>
-                  <a href="#" className="text-gray-300 hover:text-teal-400 transition">
-                    <Github size={20} />
-                  </a>
-                </div>
-              </div>
-            </div>
-            
-            <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-              <p className="text-gray-400">&copy; {new Date().getFullYear()} Honest Travel. All rights reserved.</p>
-              <div className="flex space-x-6 mt-4 md:mt-0">
-                <a href="#" className="text-gray-400 hover:text-teal-400 transition">Privacy Policy</a>
-                <a href="#" className="text-gray-400 hover:text-teal-400 transition">Terms of Service</a>
-                <a href="#" className="text-gray-400 hover:text-teal-400 transition">Cookies</a>
-              </div>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </>
+      </footer>
+    </div>
   );
 }
