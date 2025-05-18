@@ -8,7 +8,7 @@ import { Facebook } from "lucide-react";
 // Initialize Stripe with your public key (use environment variable in production)
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
-    ""
+    "pk_test_51R0kOcB9agy1awEbArALohIYrsimLkp466JWJgq80DOCpmTh5cGW8xNBnmDEDsS4lWtjjgEeleJjzxPq0GFChEJA00Ab2rht9V"
 );
 
 interface Package {
@@ -38,17 +38,38 @@ const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose, onLoginSucc
   const [password, setPassword] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [isSignInComplete, setIsSignInComplete] = useState(false);
+  const [error, setError] = useState("");
 
   if (!isVisible) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempted with:", { email, password });
-    setTimeout(() => {
+    setError("");
+    
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Login failed. Please check your credentials.");
+      }
+
+      const data = await response.json();
+      console.log("Login successful:", data);
+      
       setShowPopup(true);
       setIsSignInComplete(true);
       setTimeout(() => setShowPopup(false), 3000);
-    }, 1000);
+    } catch (err: any) {
+      setError(err.message || "An error occurred during login. Please try again.");
+      console.error("Login error:", err);
+    }
   };
 
   const handleNextClick = () => {
@@ -66,6 +87,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose, onLoginSucc
           ✕
         </button>
         <h2 className="text-2xl font-bold text-center text-black mb-4">Welcome Back</h2>
+        {error && (
+          <p className="text-red-500 text-sm text-center mb-4">{error}</p>
+        )}
         <form onSubmit={handleSubmit} className="space-y-3 mb-4">
           <div>
             <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
