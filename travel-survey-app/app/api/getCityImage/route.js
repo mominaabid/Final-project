@@ -9,7 +9,7 @@ export async function GET(request) {
     });
   }
 
-  const UNSPLASH_API_KEY = "vTu08vnDNvhtIehJocV2vGrfX1gGgDdzt1dmEEH-nBE"; // Replace with your actual Unsplash Access Key
+  const UNSPLASH_API_KEY = ""; // Replace with your actual Unsplash Access Key
   const controller = new AbortController();
 
   const checkImageRelevance = (result, location) => {

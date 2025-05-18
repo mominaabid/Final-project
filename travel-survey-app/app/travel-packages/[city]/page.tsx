@@ -8,7 +8,7 @@ import { Facebook } from "lucide-react";
 // Initialize Stripe with your public key (use environment variable in production)
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
-    "pk_test_51R0kOcB9agy1awEbArALohIYrsimLkp466JWJgq80DOCpmTh5cGW8xNBnmDEDsS4lWtjjgEeleJjzxPq0GFChEJA00Ab2rht9V"
+    ""
 );
 
 interface Package {
