@@ -31,9 +31,10 @@ interface LoginModalProps {
   isVisible: boolean;
   onClose: () => void;
   onLoginSuccess: (email: string) => void;
+  selectedPackage: Package | null;
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose, onLoginSuccess }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose, onLoginSuccess, selectedPackage }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPopup, setShowPopup] = useState(false);
@@ -52,7 +53,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose, onLoginSucc
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ 
+          email, 
+          password, 
+          packageId: selectedPackage?.id || null 
+        }),
       });
 
       if (!response.ok) {
@@ -587,6 +592,7 @@ export default function TravelPackagesPage() {
           setSelectedPackage(null);
         }}
         onLoginSuccess={handleLoginSuccess}
+        selectedPackage={selectedPackage}
       />
     </div>
   );
