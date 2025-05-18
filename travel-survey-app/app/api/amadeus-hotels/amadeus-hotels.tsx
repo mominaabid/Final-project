@@ -4,8 +4,8 @@ import axios from "axios";
 const router = express.Router();
 
 // Amadeus API credentials (store securely in environment variables)
-const AMADEUS_CLIENT_ID = "Op8hIL2GdOwzGhHmQQAlP6GQ3B5cxEla"; // Replace with your Amadeus client ID
-const AMADEUS_CLIENT_SECRET = "vgzprnoROLzgZavm"; // Replace with your Amadeus secret key
+const AMADEUS_CLIENT_ID = ""; // Replace with your Amadeus client ID
+const AMADEUS_CLIENT_SECRET = ""; // Replace with your Amadeus secret key
 const AMADEUS_API_URL = "https://test.api.amadeus.com/v1"; // Use test API for development
 
 // Get Amadeus API token
