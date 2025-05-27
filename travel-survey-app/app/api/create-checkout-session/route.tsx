@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe("sk_test_51R0kOcB9agy1awEb3ERZEpBxYmb5RUj8FesZIBpbtHhsvhd2t9gWYQ9wdY3bsNEQwBf15Ls8fVdGAp8gPzbiAU6Y00MHdiQrS7");
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_51R0kOcB9agy1awEb3ERZEpBxYmb5RUj8FesZIBpbtHhsvhd2t9gWYQ9wdY3bsNEQwBf15Ls8fVdGAp8gPzbiAU6Y00MHdiQrS7");
 
 export async function POST(request: Request) {
   try {
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
         },
       ],
       mode: "payment",
-      success_url: `${request.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${request.headers.get("origin")}/payment-success/${city}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${request.headers.get("origin")}/${city}`,
       metadata: {
         packageId,

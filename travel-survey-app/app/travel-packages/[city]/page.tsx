@@ -70,7 +70,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose, onLoginSucc
         }),
       });
 
-      // Check if response is JSON
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
         throw new Error("Server returned non-JSON response. Please check the Flask backend.");
@@ -181,7 +180,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose, onLoginSucc
         </div>
         <div className="text-center space-y-2 mb-4">
           <div className="text-gray-600 text-xs">
-            Don&apos;t have an account?{" "}
+            Don't have an account?{" "}
             <button className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-600 font-medium underline text-xs">
               Sign up
             </button>
@@ -229,6 +228,7 @@ export default function TravelPackagesPage() {
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [loadingPackageId, setLoadingPackageId] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -238,7 +238,7 @@ export default function TravelPackagesPage() {
             id: "basic",
             name: "Essential Explorer",
             price: 29.99,
-            description: `See the best of ${city} with our basic package. Includes standard itinerary and minimal customization.`,
+            description: `Discover ${city} with our basic package. Includes standard itinerary and minimal customization.`,
             duration: "Access for 30 days",
             features: [
               "Full itinerary access",
@@ -367,13 +367,19 @@ export default function TravelPackagesPage() {
         throw stripeError;
       }
 
-      // Store login info in localStorage (consider secure alternatives in production)
+      // Store login info and package details in localStorage
       localStorage.setItem("userEmail", email);
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("selectedPackage", JSON.stringify(selectedPackage));
-
-      // Redirect to TravelPlanPage with unblurred content
-      router.push(`/travel-plan/${city}`);
+      localStorage.setItem("isBlurred", "false");
+      // Initialize or reset completed surveys for the selected package
+      localStorage.setItem("completedSurveys", "0");
+      setPaymentSuccess(true);
+      setTimeout(() => {
+        setPaymentSuccess(false);
+        // Redirect to survey page after successful package purchase
+        router.push(`/survey/${city}`);
+      }, 3000);
     } catch (error: any) {
       console.error("Error initiating checkout:", error);
       setError(error.message || "An error occurred during checkout. Please try again.");
@@ -448,7 +454,11 @@ export default function TravelPackagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white pb-16">
-      {/* Hero section */}
+      {paymentSuccess && (
+        <div className="fixed top-4 right-4 bg-teal-500 text-white p-4 rounded-md shadow-lg z-50">
+          Payment successfully completed! Redirecting to survey...
+        </div>
+      )}
       <div className="bg-gray-800 py-16 mb-8 shadow-md">
         <div className="max-w-4xl mx-auto px-6">
           <h1 className="text-4xl md:text-5xl font-bold mb-2 text-teal-400">
@@ -461,7 +471,6 @@ export default function TravelPackagesPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-6">
-        {/* Package cards aligned horizontally */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {packages.map((pkg) => (
             <div
@@ -550,7 +559,6 @@ export default function TravelPackagesPage() {
           ))}
         </div>
 
-        {/* Testimonials Section */}
         <div className="mb-12">
           <h2 className="text-3xl font-bold text-teal-400 mb-8">What Our Customers Say</h2>
           <div className="relative">
@@ -601,7 +609,6 @@ export default function TravelPackagesPage() {
         </div>
       </div>
 
-      {/* Login Modal */}
       <LoginModal
         isVisible={showLogin}
         onClose={() => {
