@@ -66,7 +66,17 @@ function HotelRecommendations({ city, startDate, endDate }: { city: string; star
 
         let hotelsArray: any[] = [];
         if (Array.isArray(data)) {
-          hotelsArray = data;
+          // Parse JSON strings in the response array
+          hotelsArray = data
+            .map((item: string) => {
+              try {
+                return JSON.parse(item);
+              } catch (e) {
+                console.error("Error parsing hotel JSON:", e);
+                return null;
+              }
+            })
+            .filter((item) => item !== null); // Remove any failed parses
         } else {
           throw new Error("Invalid response format: Expected an array of hotel objects");
         }
@@ -74,18 +84,18 @@ function HotelRecommendations({ city, startDate, endDate }: { city: string; star
         const mappedHotels: HotelOption[] = hotelsArray.map((hotel: any, index: number) => {
           console.log(`Mapping hotel ${index}:`, hotel);
 
-          const hotelName = hotel.name || hotel.hotel_name || "Unnamed Hotel";
-          const hotelRating = hotel.rating || hotel.hotel_rating || "4.0";
-          const hotelPrice = hotel.price || hotel.hotel_price || "$200/night";
-          const hotelImages = hotel.images || hotel.hotel_images || [];
-          const hotelDescription = hotel.description !== "N/A" ? hotel.description : hotel.hotel_description || "No description available.";
+          const hotelName = hotel.hotel_name && hotel.hotel_name !== "N/A" ? hotel.hotel_name : "Unknown Hotel";
+          const hotelRating = hotel.hotel_cat && hotel.hotel_cat !== "" ? hotel.hotel_cat : "4.0";
+          const hotelPrice = hotel.nightrate && hotel.nightrate !== "N/A" ? hotel.nightrate : hotel.total_rate && hotel.total_rate !== "N/A" ? hotel.total_rate : "$200/night";
+          const hotelImages = Array.isArray(hotel.hotel_images) ? hotel.hotel_images : [];
+          const hotelDescription = hotel.description && hotel.description !== "N/A" ? hotel.description : "No description available.";
 
           return {
             id: `hotel-${index}`,
             name: hotelName,
-            rating: parseFloat(hotelRating) || 4.0,
+            rating: parseFloat(hotelRating) || 4.0, // Parse rating or default to 4.0
             price: hotelPrice,
-            imageUrl: hotelImages.length > 0 ? hotelImages[0] : "/api/placeholder/300/200",
+            imageUrl: hotelImages.length > 0 && hotelImages[0] !== " " ? hotelImages[0] : "/api/placeholder/300/200",
             description: hotelDescription,
           };
         });
@@ -156,7 +166,7 @@ function HotelRecommendations({ city, startDate, endDate }: { city: string; star
     fetchHotels();
   }, [city, startDate, endDate]);
 
-  const hotelsPerPage = 3; // Show 3 hotels at a time
+  const hotelsPerPage = 3;
   const totalPages = Math.ceil(hotels.length / hotelsPerPage);
 
   const handlePrev = () => {
@@ -238,13 +248,11 @@ function HotelRecommendations({ city, startDate, endDate }: { city: string; star
     return stars;
   };
 
-  // Calculate the starting index for the current set of hotels
   const startIndex = currentIndex * hotelsPerPage;
   const displayedHotels = hotels.slice(startIndex, startIndex + hotelsPerPage);
 
   return (
     <div className="relative">
-      {/* Carousel Container */}
       <div className="overflow-hidden">
         <div className="flex">
           {displayedHotels.map((hotel) => (
@@ -273,7 +281,6 @@ function HotelRecommendations({ city, startDate, endDate }: { city: string; star
         </div>
       </div>
 
-      {/* Navigation Arrows */}
       <button
         onClick={handlePrev}
         className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-teal-500 hover:bg-teal-600 text-white rounded-full w-10 h-10 flex items-center justify-center"
@@ -313,7 +320,6 @@ function HotelRecommendations({ city, startDate, endDate }: { city: string; star
         </svg>
       </button>
 
-      {/* Dots for Navigation */}
       <div className="flex justify-center mt-4">
         {Array.from({ length: totalPages }).map((_, index) => (
           <button
@@ -339,7 +345,7 @@ export default function TravelPlanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [backgroundImage, setBackgroundImage] = useState("");
-  const [isBlurred, setIsBlurred] = useState(true); // Default to blurred
+  const [isBlurred, setIsBlurred] = useState(true);
 
   const [localStorageData, setLocalStorageData] = useState<{
     city: string;
@@ -375,11 +381,9 @@ export default function TravelPlanPage() {
   useEffect(() => {
     if (!cityFromParams) return;
 
-    // Check for unblur query parameter from payment success redirect
     const shouldUnblur = searchParams.get("unblur") === "true";
-    setIsBlurred(!shouldUnblur); // If unblur=true, set isBlurred to false
+    setIsBlurred(!shouldUnblur);
 
-    // Load city, startDate, and endDate from localStorage
     const storedCity = localStorage.getItem("city") || "";
     const storedStartDate = localStorage.getItem("start_date") || "";
     const storedEndDate = localStorage.getItem("end_date") || "";
@@ -424,39 +428,77 @@ export default function TravelPlanPage() {
       return;
     }
 
-    // Create a new window for printing
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) {
       alert("Please allow pop-ups to print the itinerary.");
       return;
     }
 
-    // Get the entire HTML content of the page
-    const pageContent = document.documentElement.outerHTML;
+    const userEmail = localStorage.getItem("user_email") || "user@example.com";
+    const planData = travelPlan && typeof travelPlan.travel_plan === "string"
+      ? JSON.parse(travelPlan.travel_plan)
+      : travelPlan?.travel_plan || { itinerary: [], travel_tips: "", local_food_recommendations: "", estimated_costs: "" };
 
-    // Get all stylesheets
-    const stylesheets = Array.from(document.styleSheets)
-      .map((styleSheet) => {
-        try {
-          return Array.from(styleSheet.cssRules)
-            .map((rule) => rule.cssText)
-            .join('\n');
-        } catch (e) {
-          console.warn("Cannot access stylesheet:", e);
-          return '';
-        }
-      })
-      .join('\n');
+    const formatDate = (dateString: string) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    };
 
-    // Write the content to the print window
-    printWindow.document.write(`
+    const itineraryTableRows = planData.itinerary.map((dayPlan: ItineraryDay, index: number) => `
+      <tr class="border-b border-gray-700">
+        <td class="px-4 py-2 font-semibold text-teal-400">${dayPlan.day}</td>
+        <td class="px-4 py-2">${dayPlan.morning}</td>
+        <td class="px-4 py-2">${dayPlan.afternoon}</td>
+        <td class="px-4 py-2">${dayPlan.evening}</td>
+      </tr>
+    `).join("");
+
+    const printContent = `
       <html>
         <head>
           <title>Travel Plan for ${cityFromParams}</title>
-          <style>${stylesheets}</style>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            body { font-family: Arial, sans-serif; }
+            .table-container { max-width: 800px; margin: auto; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { text-align: left; }
+            th { background-color: #2d3748; color: #81e6d9; }
+            .section-title { color: #81e6d9; }
+          </style>
         </head>
-        <body>
-          ${pageContent}
+        <body class="bg-gray-900 text-white">
+          <div class="table-container p-6">
+            <h1 className="text-3xl font-bold mb-4 text-teal-400">Travel Plan for ${cityFromParams}</h1>
+            <p className="mb-4">Email: ${userEmail}</p>
+            <p className="mb-4">Dates: ${formatDate(localStorageData.startDate)} - ${formatDate(localStorageData.endDate)}</p>
+            <p className="mb-6">${travelPlan?.city_description || "Explore the wonders of this destination!"}</p>
+
+            <h2 className="section-title text-2xl font-bold mb-4">Itinerary</h2>
+            <table className="mb-8">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Day</th>
+                  <th className="px-4 py-2">Morning</th>
+                  <th className="px-4 py-2">Afternoon</th>
+                  <th className="px-4 py-2">Evening</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itineraryTableRows}
+              </tbody>
+            </table>
+
+            <h2 className="section-title text-2xl font-bold mb-4">Travel Tips</h2>
+            <p className="mb-6">${planData.travel_tips || "No travel tips available."}</p>
+
+            <h2 className="section-title text-2xl font-bold mb-4">Local Food Recommendations</h2>
+            <p className="mb-6">${planData.local_food_recommendations || "No food recommendations available."}</p>
+
+            <h2 className="section-title text-2xl font-bold mb-4">Estimated Costs</h2>
+            <p>${planData.estimated_costs || "No cost estimates available."}</p>
+          </div>
           <script>
             window.onload = function() {
               window.print();
@@ -467,8 +509,9 @@ export default function TravelPlanPage() {
           </script>
         </body>
       </html>
-    `);
+    `;
 
+    printWindow.document.write(printContent);
     printWindow.document.close();
   };
 
@@ -507,17 +550,17 @@ export default function TravelPlanPage() {
         },
       ];
 
-      const handleOptionClick = (option) => {
+      const handleOptionClick = (option: { name: string; url?: string; action?: () => void }) => {
         if (option.action) {
           option.action();
-        } else {
+        } else if (option.url) {
           window.open(option.url, "_blank");
         }
       };
 
       const selectedOption = prompt(
         "Select sharing method:\n" +
-        shareOptions.map((opt, index) => `${index + 1}. ${opt.name}`).join("\n")
+          shareOptions.map((opt, index) => `${index + 1}. ${opt.name}`).join("\n")
       );
       if (selectedOption !== null) {
         const index = parseInt(selectedOption) - 1;
