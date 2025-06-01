@@ -66,7 +66,6 @@ function HotelRecommendations({ city, startDate, endDate }: { city: string; star
 
         let hotelsArray: any[] = [];
         if (Array.isArray(data)) {
-          // Parse JSON strings in the response array
           hotelsArray = data
             .map((item: string) => {
               try {
@@ -76,7 +75,7 @@ function HotelRecommendations({ city, startDate, endDate }: { city: string; star
                 return null;
               }
             })
-            .filter((item) => item !== null); // Remove any failed parses
+            .filter((item) => item !== null);
         } else {
           throw new Error("Invalid response format: Expected an array of hotel objects");
         }
@@ -93,7 +92,7 @@ function HotelRecommendations({ city, startDate, endDate }: { city: string; star
           return {
             id: `hotel-${index}`,
             name: hotelName,
-            rating: parseFloat(hotelRating) || 4.0, // Parse rating or default to 4.0
+            rating: parseFloat(hotelRating) || 4.0,
             price: hotelPrice,
             imageUrl: hotelImages.length > 0 && hotelImages[0] !== " " ? hotelImages[0] : "/api/placeholder/300/200",
             description: hotelDescription,
@@ -466,23 +465,30 @@ export default function TravelPlanPage() {
             th, td { text-align: left; }
             th { background-color: #2d3748; color: #81e6d9; }
             .section-title { color: #81e6d9; }
+            .company-info { margin-bottom: 1.5rem; }
           </style>
         </head>
         <body class="bg-gray-900 text-white">
           <div class="table-container p-6">
-            <h1 className="text-3xl font-bold mb-4 text-teal-400">Travel Plan for ${cityFromParams}</h1>
-            <p className="mb-4">Email: ${userEmail}</p>
-            <p className="mb-4">Dates: ${formatDate(localStorageData.startDate)} - ${formatDate(localStorageData.endDate)}</p>
-            <p className="mb-6">${travelPlan?.city_description || "Explore the wonders of this destination!"}</p>
+            <h1 class="text-3xl font-bold mb-4 text-teal-400">Travel Plan for ${cityFromParams}</h1>
+            <div class="company-info">
+              <h2 class="section-title text-2xl font-bold mb-2">About Honest Travel Services</h2>
+              <p class="text-gray-300 mb-4">
+                At Honest Travel Services, we are dedicated to crafting unforgettable travel experiences tailored to your preferences. With a commitment to transparency, quality, and customer satisfaction, we provide personalized itineraries, expert recommendations, and seamless travel planning to ensure your journey is both memorable and hassle-free. Let us guide you to explore the world with confidence and excitement!
+              </p>
+            </div>
+            <p class="mb-4">Email: ${userEmail}</p>
+            <p class="mb-4">Dates: ${formatDate(localStorageData.startDate)} - ${formatDate(localStorageData.endDate)}</p>
+            <p class="mb-6">${travelPlan?.city_description || "Explore the wonders of this destination!"}</p>
 
-            <h2 className="section-title text-2xl font-bold mb-4">Itinerary</h2>
-            <table className="mb-8">
+            <h2 class="section-title text-2xl font-bold mb-4">Itinerary</h2>
+            <table class="mb-8">
               <thead>
                 <tr>
-                  <th className="px-4 py-2">Day</th>
-                  <th className="px-4 py-2">Morning</th>
-                  <th className="px-4 py-2">Afternoon</th>
-                  <th className="px-4 py-2">Evening</th>
+                  <th class="px-4 py-2">Day</th>
+                  <th class="px-4 py-2">Morning</th>
+                  <th class="px-4 py-2">Afternoon</th>
+                  <th class="px-4 py-2">Evening</th>
                 </tr>
               </thead>
               <tbody>
@@ -490,13 +496,13 @@ export default function TravelPlanPage() {
               </tbody>
             </table>
 
-            <h2 className="section-title text-2xl font-bold mb-4">Travel Tips</h2>
-            <p className="mb-6">${planData.travel_tips || "No travel tips available."}</p>
+            <h2 class="section-title text-2xl font-bold mb-4">Travel Tips</h2>
+            <p class="mb-6">${planData.travel_tips || "No travel tips available."}</p>
 
-            <h2 className="section-title text-2xl font-bold mb-4">Local Food Recommendations</h2>
-            <p className="mb-6">${planData.local_food_recommendations || "No food recommendations available."}</p>
+            <h2 class="section-title text-2xl font-bold mb-4">Local Food Recommendations</h2>
+            <p class="mb-6">${planData.local_food_recommendations || "No food recommendations available."}</p>
 
-            <h2 className="section-title text-2xl font-bold mb-4">Estimated Costs</h2>
+            <h2 class="section-title text-2xl font-bold mb-4">Estimated Costs</h2>
             <p>${planData.estimated_costs || "No cost estimates available."}</p>
           </div>
           <script>
