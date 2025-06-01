@@ -286,33 +286,49 @@ export default function Home() {
       return;
     }
 
-    await fetchCityImage(city);
+    // Validate date range
+    if (!dateRange.start || !dateRange.end || dateRange.start.getTime() === dateRange.end.getTime()) {
+      alert("Please select a valid date range.");
+      return;
+    }
 
+    // Store basic data in localStorage for CityDetails
     const startDate = dateRange.start.toISOString().split("T")[0];
     const endDate = dateRange.end.toISOString().split("T")[0];
-    console.log("Sending Data:", { city, start_date: startDate, end_date: endDate, travelers: travellers });
+    localStorage.setItem("city", city);
+    localStorage.setItem("start_date", startDate);
+    localStorage.setItem("end_date", endDate);
+    localStorage.setItem("travelers", travellers.toString());
+
+    // Navigate immediately to CityDetails page
+    router.push(`/city/${encodeURIComponent(city)}`);
+
+    // Fetch city image and city info concurrently
     try {
+      // Trigger image fetch without awaiting
+      fetchCityImage(city);
+
+      // Fetch city info from backend
+      console.log("Sending Data:", { city, start_date: startDate, end_date: endDate, travelers: travellers });
       const response = await fetch("http://127.0.0.1:5000/get_city_info", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ city, start_date: startDate, end_date: endDate, travelers: travellers }),
       });
+
       if (!response.ok) throw new Error(`HTTP Error! Status: ${response.status}`);
       const data = await response.json();
       console.log("API Response:", data);
+
       if (data.description && data.activities?.length > 0) {
         localStorage.setItem("cityInfo", JSON.stringify({ ...data, start_date: startDate, end_date: endDate, travelers: travellers }));
-        localStorage.setItem("city", city);
-        localStorage.setItem("start_date", startDate);
-        localStorage.setItem("end_date", endDate);
-        localStorage.setItem("travelers", travellers.toString());
-        router.push(`/city/${city}`);
       } else {
-        alert("No activities found for this city.");
+        console.warn("No activities found for this city.");
+        localStorage.setItem("cityInfo", JSON.stringify({ error: "No activities found" }));
       }
     } catch (error) {
       console.error("Error fetching city data:", error);
-      alert("Failed to fetch activities. Check the API or console for errors.");
+      localStorage.setItem("cityInfo", JSON.stringify({ error: "Failed to fetch activities" }));
     }
   };
 
@@ -516,6 +532,7 @@ export default function Home() {
                     onFocus={() => city.length >= 2 && !isCitySelected && setShowSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     ref={cityInputRef}
+                    autoComplete="off" // Added to disable browser autocomplete history
                     className="h-14 w-full px-4 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-400 transition"
                   />
                   {showSuggestions && citySuggestions.length > 0 && (
